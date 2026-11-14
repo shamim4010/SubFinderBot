@@ -165,7 +165,7 @@ BOT_USERNAME = ""
 SESSION = requests.Session()
 
 DEFAULT_SETTINGS = {
-    "join_gate": False, "gate_all_downloads": False, "channels": [], "sources": [],
+    "join_gate": True, "gate_all_downloads": True, "channels": ["@animesub_bd"], "sources": [],
     "admins": [], "daily_limit": 10, "referral_bonus": 3,
     "maintenance": False, "online_premium_only": False, "codes": {},
 }
