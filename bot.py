@@ -932,21 +932,106 @@ def pending_reqs():
     return [r for r in REQS if r.get("status") == "pending"]
 
 
+REQFLOW = {}
+REQ_TYPES = {"movie": "🎬 Movie", "anime": "📺 Anime", "drama": "🎭 Drama"}
+REQ_LANGS = {"bn": "🇧🇩 Bangla", "en": "🇬🇧 English", "both": "🌐 Bangla + English"}
+
+
 def make_request(chat_id, user):
+    """Advanced request wizard: title -> type -> link -> language -> scope -> confirm.
+    Search theke asle title auto boshe (LAST_QUERY)."""
     uid = user["id"]
+    REQFLOW[uid] = {"uid": uid}
     q = LAST_QUERY.get(chat_id)
-    if not q:
-        send_message(chat_id, t(uid, "req_need")); return
-    if any(r["uid"] == uid and norm(r["q"]) == norm(q) and r["status"] == "pending" for r in REQS):
+    if q:
+        REQFLOW[uid]["title"] = q
+        reqflow_type(chat_id, uid)
+    else:
+        UFLOW[uid] = "req_title"
+        send_message(chat_id, t(uid, "req_w_title"), kb([B("❌ Cancel", "rqx")]))
+
+
+def reqflow_title(chat_id, user, text):
+    uid = user["id"]
+    REQFLOW.setdefault(uid, {"uid": uid})["title"] = text.strip()[:120]
+    reqflow_type(chat_id, uid)
+
+
+def reqflow_type(chat_id, uid):
+    f = REQFLOW.get(uid) or {}
+    send_message(chat_id, t(uid, "req_w_type", title=esc(f.get("title", ""))),
+                 kb([B("🎬 Movie", "rqt:movie"), B("📺 Anime", "rqt:anime"), B("🎭 Drama", "rqt:drama")],
+                    [B("❌ Cancel", "rqx")]))
+
+
+def reqflow_link_step(chat_id, uid):
+    UFLOW[uid] = "req_link"
+    send_message(chat_id, t(uid, "req_w_link"),
+                 kb([B("⏭ Skip", "rql:skip")], [B("❌ Cancel", "rqx")]))
+
+
+def reqflow_link(chat_id, user, text):
+    uid = user["id"]
+    text = text.strip()
+    if "http" not in text and "." not in text:
+        UFLOW[uid] = "req_link"
+        send_message(chat_id, t(uid, "req_link_bad"),
+                     kb([B("⏭ Skip", "rql:skip")], [B("❌ Cancel", "rqx")]))
+        return
+    REQFLOW.setdefault(uid, {"uid": uid})["link"] = text[:300]
+    reqflow_lang_step(chat_id, uid)
+
+
+def reqflow_lang_step(chat_id, uid):
+    send_message(chat_id, t(uid, "req_w_lang"),
+                 kb([B("🇧🇩 Bangla", "rqg:bn"), B("🇬🇧 English", "rqg:en")],
+                    [B("🌐 Both", "rqg:both"), B("❌ Cancel", "rqx")]))
+
+
+def reqflow_scope_step(chat_id, uid):
+    f = REQFLOW.get(uid) or {}
+    if f.get("type") == "movie":
+        f["scope"] = "Full movie"
+        reqflow_confirm(chat_id, uid)
+        return
+    send_message(chat_id, t(uid, "req_w_scope"),
+                 kb([B("📦 Full Season", "rqs:full"), B("🔢 Specific Episode", "rqs:ep")],
+                    [B("❌ Cancel", "rqx")]))
+
+
+def reqflow_ep(chat_id, user, text):
+    uid = user["id"]
+    REQFLOW.setdefault(uid, {"uid": uid})["scope"] = text.strip()[:40]
+    reqflow_confirm(chat_id, uid)
+
+
+def reqflow_confirm(chat_id, uid):
+    f = REQFLOW.get(uid) or {}
+    send_message(chat_id, t(uid, "req_w_confirm", title=esc(f.get("title", "")),
+                            type=REQ_TYPES.get(f.get("type"), "-"),
+                            lang=REQ_LANGS.get(f.get("lang"), "-"),
+                            scope=esc(f.get("scope", "-")), link=esc(f.get("link") or "—")),
+                 kb([B("✅ Confirm", "rqok")], [B("❌ Cancel", "rqx")]))
+
+
+def reqflow_save(chat_id, user):
+    uid = user["id"]
+    f = REQFLOW.pop(uid, None) or {}
+    title = f.get("title") or LAST_QUERY.get(chat_id) or ""
+    if any(r["uid"] == uid and norm(r["q"]) == norm(title) and r["status"] == "pending" for r in REQS):
         send_message(chat_id, t(uid, "req_dup")); return
     with LOCK:
         rid = max([r["id"] for r in REQS] + [0]) + 1
-        REQS.append({"id": rid, "uid": uid, "name": user.get("first_name", ""), "q": q,
+        REQS.append({"id": rid, "uid": uid, "name": user.get("first_name", ""), "q": title,
+                     "type": f.get("type", ""), "link": f.get("link", ""),
+                     "lang": f.get("lang", ""), "scope": f.get("scope", ""),
                      "ts": time.strftime("%Y-%m-%d %H:%M"), "status": "pending"})
         mark("reqs")
     send_message(chat_id, t(uid, "req_ok"))
     for aid in admin_ids():
-        send_message(aid, T(ulang(aid), "a_req_new", q=esc(q), name=esc(user.get("first_name", "")), uid=uid),
+        send_message(aid, T(ulang(aid), "a_req_new2", q=esc(title), name=esc(user.get("first_name", "")), uid=uid,
+                            type=REQ_TYPES.get(f.get("type"), "-"), lang=REQ_LANGS.get(f.get("lang"), "-"),
+                            scope=esc(f.get("scope", "-")), link=esc(f.get("link") or "—")),
                      kb([B("👁", f"adm:rq:view:{rid}")]))
 
 
@@ -1759,7 +1844,16 @@ def admin_callback(cb, parts):
             r = next((x for x in REQS if str(x["id"]) == rest), None)
             if not r:
                 return view_reqs(c, mid)
-            show(c, t(c, "a_req_card", id=r["id"], q=esc(r["q"]), name=esc(r["name"]), uid=r["uid"], ts=r["ts"]),
+            _extra = ""
+            if r.get("type"):
+                _extra += f"\n📌 Type: {REQ_TYPES.get(r['type'], r['type'])}"
+            if r.get("lang"):
+                _extra += f"\n🌐 Subtitle: {REQ_LANGS.get(r['lang'], r['lang'])}"
+            if r.get("scope"):
+                _extra += f"\n📦 Scope: {esc(r['scope'])}"
+            if r.get("link"):
+                _extra += f"\n🔗 {esc(r['link'])}"
+            show(c, t(c, "a_req_card", id=r["id"], q=esc(r["q"]), name=esc(r["name"]), uid=r["uid"], ts=r["ts"]) + _extra,
                  kb([B(t(c, "a_req_done_btn"), f"adm:rq:done:{r['id']}")],
                     [B(t(c, "a_req_del_btn"), f"adm:rq:del:{r['id']}"), B("👤", f"adm:u:view:{r['uid']}")],
                     [B(t(c, "a_b_reqs"), "adm:rq")]), mid)
@@ -1901,6 +1995,12 @@ def handle_message(msg):
             submit_feedback(chat_id, user, text)
         elif kind == "search":
             handle_query(chat_id, user, rec, text)
+        elif kind == "req_title":
+            reqflow_title(chat_id, user, text)
+        elif kind == "req_link":
+            reqflow_link(chat_id, user, text)
+        elif kind == "req_ep":
+            reqflow_ep(chat_id, user, text)
         return
 
     if cmd in USER_VIEWS:
@@ -2074,6 +2174,28 @@ def handle_callback(cb):
         if require_access(chat_id, uid, "online", pending="online"):
             start_online(chat_id, uid)
         return
+    if data == "rqx":
+        REQFLOW.pop(uid, None); UFLOW.pop(uid, None)
+        answer_callback(cid); send_message(chat_id, t(uid, "req_cancelled")); return
+    if parts[0] == "rqt" and len(parts) == 2 and parts[1] in REQ_TYPES:
+        REQFLOW.setdefault(uid, {"uid": uid})["type"] = parts[1]
+        answer_callback(cid); reqflow_link_step(chat_id, uid); return
+    if data == "rql:skip":
+        answer_callback(cid); reqflow_lang_step(chat_id, uid); return
+    if parts[0] == "rqg" and len(parts) == 2 and parts[1] in REQ_LANGS:
+        REQFLOW.setdefault(uid, {"uid": uid})["lang"] = parts[1]
+        answer_callback(cid); reqflow_scope_step(chat_id, uid); return
+    if parts[0] == "rqs" and len(parts) == 2:
+        answer_callback(cid)
+        if parts[1] == "full":
+            REQFLOW.setdefault(uid, {"uid": uid})["scope"] = "Full Season"
+            reqflow_confirm(chat_id, uid)
+        else:
+            UFLOW[uid] = "req_ep"
+            send_message(chat_id, t(uid, "req_w_ep"), kb([B("❌ Cancel", "rqx")]))
+        return
+    if data == "rqok":
+        answer_callback(cid); reqflow_save(chat_id, user); return
     if data == "req":
         answer_callback(cid); make_request(chat_id, user); return
     if parts[0] == "feat" and chat_id in CTX:

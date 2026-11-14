@@ -205,6 +205,22 @@ add("feedback_ok", "💙 ধন্যবাদ! অ্যাডমিন দে�
 add("feedback_wait", "⏳ একটু পরে আবার ফিডব্যাক পাঠান।", "⏳ Please wait a bit before sending more feedback.")
 add("req_ok", "📩 রিকুয়েস্ট জমা হয়েছে! সাবটাইটেল যোগ হলেই আপনাকে জানাব 🙏", "📩 Request saved! I'll notify you when it's added 🙏")
 add("req_dup", "📩 এই রিকুয়েস্ট আগেই জমা আছে — যোগ হলে জানাব।", "📩 You've already requested this — I'll notify you.")
+add("req_w_title", "📩 কোন মুভি / অ্যানিমে / ড্রামার সাবটাইটেল চাও?\nতার <b>পুরো নামটা</b> লেখো 👇",
+    "📩 Which movie / anime / drama subtitle do you want?\nType its <b>full name</b> 👇")
+add("req_w_type", "🎞 <b>{title}</b>\nএটা কোন ধরনের? একটা বেছে নাও 👇",
+    "🎞 <b>{title}</b>\nWhat type is it? Pick one 👇")
+add("req_w_link", "🔗 এবার এটার একটা <b>লিংক</b> দাও — IMDb / MyAnimeList / TMDB, যেকোনো একটা।\nলিংক থাকলে ঠিক জিনিসটা খুঁজে পেতে অনেক সুবিধা হয়।\nলিংক না থাকলে <b>Skip</b> চাপো।",
+    "🔗 Now send a <b>link</b> for it — IMDb / MyAnimeList / TMDB, any one.\nA link helps us find the exact right thing.\nNo link? Tap <b>Skip</b>.")
+add("req_link_bad", "⚠️ এটা লিংক মনে হচ্ছে না — আবার পাঠাও, অথবা Skip চাপো।",
+    "⚠️ That doesn't look like a link — send it again, or tap Skip.")
+add("req_w_lang", "🌐 কোন ভাষার সাবটাইটেল চাও?", "🌐 Which subtitle language do you want?")
+add("req_w_scope", "📦 পুরো সিজন লাগবে, নাকি নির্দিষ্ট একটা এপিসোড?", "📦 Full season, or a specific episode?")
+add("req_w_ep", "🔢 সিজন ও এপিসোড লেখো — যেমন: S1 E5", "🔢 Type the season & episode — e.g. S1 E5")
+add("req_w_confirm", "📩 <b>রিকুয়েস্ট চেক করো</b>\n\n🎞 Title: <b>{title}</b>\n📌 Type: {type}\n🌐 Subtitle: {lang}\n📦 Scope: {scope}\n🔗 Link: {link}\n\nসব ঠিক থাকলে <b>Confirm</b> চাপো 👇",
+    "📩 <b>Check your request</b>\n\n🎞 Title: <b>{title}</b>\n📌 Type: {type}\n🌐 Subtitle: {lang}\n📦 Scope: {scope}\n🔗 Link: {link}\n\nIf everything looks right, tap <b>Confirm</b> 👇")
+add("req_cancelled", "❌ রিকুয়েস্ট বাতিল করা হয়েছে।", "❌ Request cancelled.")
+add("a_req_new2", "📩 <b>নতুন রিকুয়েস্ট</b>: {q}\n📌 {type} · 🌐 {lang} · 📦 {scope}\n🔗 {link}\n👤 {name} (<code>{uid}</code>)",
+    "📩 <b>New request</b>: {q}\n📌 {type} · 🌐 {lang} · 📦 {scope}\n🔗 {link}\n👤 {name} (<code>{uid}</code>)")
 add("req_need", "আগে যে সাবটাইটেল চান তার <b>নাম লিখুন</b>, তারপর রিকুয়েস্ট বাটন কাজ করবে।",
     "First <b>type the title</b> you want, then the request button will work.")
 add("req_done", "✅ সুখবর! আপনার রিকুয়েস্ট করা <b>{q}</b> এখন লাইব্রেরিতে আছে — নাম লিখে সার্চ করুন।",
