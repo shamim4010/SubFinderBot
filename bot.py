@@ -847,7 +847,7 @@ def online_download(chat_id, uid, idx):
     if obj is None:
         send_message(chat_id, t(uid, "src_off")); return
     cache_path = os.path.join(CACHE_DIR, f"{src}-{r['file_id']}.srt")
-    title = r.get("feature") or ctx.get("title_q", "")
+    title = r.get("release") or r.get("feature") or ctx.get("title_q", "")
     caption = t(uid, "caption_online", title=esc(title), lang=lang_label(uid, r["lang"]), src=esc(src))
     if not os.path.exists(cache_path):
         try:
@@ -861,7 +861,22 @@ def online_download(chat_id, uid, idx):
                     cache_path = path
         except Exception as e:
             send_message(chat_id, t(uid, "dl_fail", err=esc(e))); return
-    deliver(chat_id, uid, cache_path, caption, title)
+    send_path = cache_path
+    rel = r.get("release")
+    if rel:
+        safe = re.sub(r"[^\w\-.()\[\] ]+", "_", str(rel)).strip()[:80].strip()
+        if safe:
+            named_dir = os.path.join(CACHE_DIR, "named")
+            os.makedirs(named_dir, exist_ok=True)
+            named_path = os.path.join(named_dir, safe if safe.lower().endswith(".srt") else safe + ".srt")
+            try:
+                if not os.path.exists(named_path):
+                    with open(cache_path, "rb") as fsrc, open(named_path, "wb") as fdst:
+                        fdst.write(fsrc.read())
+                send_path = named_path
+            except Exception:
+                send_path = cache_path
+    deliver(chat_id, uid, send_path, caption, title)
 
 
 # ================================================================ requests
