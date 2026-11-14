@@ -488,14 +488,10 @@ for _lg in LANGS:
 
 
 def main_menu_kb(uid):
-    return kb([B(t(uid, "btn_library"), "mn:library")],
-              [B(t(uid, "btn_trending"), "mn:trending")],
-              [B(t(uid, "btn_favs"), "mn:favs")],
-              [B(t(uid, "btn_history"), "mn:history")],
-              [B(t(uid, "btn_profile"), "mn:profile")],
-              [B(t(uid, "btn_invite"), "mn:invite")],
-              [B(t(uid, "btn_premium"), "mn:premium", "primary")],
-              [B(t(uid, "btn_settings"), "mn:settings")],
+    return kb([B(t(uid, "btn_library"), "mn:library"), B(t(uid, "btn_trending"), "mn:trending")],
+              [B(t(uid, "btn_favs"), "mn:favs"), B(t(uid, "btn_history"), "mn:history")],
+              [B(t(uid, "btn_profile"), "mn:profile"), B(t(uid, "btn_invite"), "mn:invite")],
+              [B(t(uid, "btn_premium"), "mn:premium", "primary"), B(t(uid, "btn_settings"), "mn:settings")],
               [B(t(uid, "btn_help"), "mn:help")])
 
 
@@ -504,7 +500,7 @@ def home_row(uid):
 
 
 def lang_picker_kb(suffix=""):
-    return kb(*[[B(name, f"lg:{code}{suffix}")] for code, name in LANGS.items()])
+    return kb([B(name, f"lg:{code}{suffix}") for code, name in LANGS.items()])
 
 
 # ================================================================ catalog + search
@@ -1159,8 +1155,8 @@ def make_request(chat_id, user):
         q = LAST_QUERY.get(chat_id)
         url = base.rstrip("/") + "/form" + (("?t=" + urllib.parse.quote(q)) if q else "")
         markup = {"inline_keyboard": [[{"text": "📝 Open Request Form", "web_app": {"url": url}, "style": "primary"}],
-                                      [{"text": "⌨️ Step-by-step", "callback_data": "rqwiz"}],
-                                      [{"text": "❌ Cancel", "callback_data": "rqx", "style": "danger"}]]}
+                                      [{"text": "⌨️ Step-by-step", "callback_data": "rqwiz"},
+                                       {"text": "❌ Cancel", "callback_data": "rqx", "style": "danger"}]]}
         send_message(chat_id, t(uid, "req_choose"), markup)
         return
     start_req_wizard(chat_id, user)
@@ -1190,7 +1186,7 @@ def reqflow_type(chat_id, uid, mid=None):
     f = REQFLOW.get(uid) or {}
     UFLOW.pop(uid, None)
     wstep(chat_id, uid, t(uid, "req_w_type", title=esc(f.get("title", ""))),
-          kb([B("🎬 Movie", "rqt:movie")], [B("📺 Anime", "rqt:anime")], [B("🎭 Drama", "rqt:drama")],
+          kb([B("🎬 Movie", "rqt:movie"), B("📺 Anime", "rqt:anime"), B("🎭 Drama", "rqt:drama")],
              [B("✏️ Edit name", "rqedit"), B(BACK, "rqb:title")],
              [B("❌ Cancel", "rqx", "danger")]), mid)
 
@@ -1198,7 +1194,7 @@ def reqflow_type(chat_id, uid, mid=None):
 def reqflow_link_step(chat_id, uid, mid=None):
     UFLOW[uid] = "req_link"
     wstep(chat_id, uid, t(uid, "req_w_link"),
-          kb([B("⏭ Skip", "rql:skip")], [B(BACK, "rqb:type")], [B("❌ Cancel", "rqx", "danger")]), mid)
+          kb([B("⏭ Skip", "rql:skip")], [B(BACK, "rqb:type"), B("❌ Cancel", "rqx", "danger")]), mid)
 
 
 def reqflow_link(chat_id, user, text):
@@ -1207,7 +1203,7 @@ def reqflow_link(chat_id, user, text):
     if "http" not in text and "." not in text:
         UFLOW[uid] = "req_link"
         wstep(chat_id, uid, t(uid, "req_link_bad"),
-              kb([B("⏭ Skip", "rql:skip")], [B(BACK, "rqb:type")], [B("❌ Cancel", "rqx", "danger")]))
+              kb([B("⏭ Skip", "rql:skip")], [B(BACK, "rqb:type"), B("❌ Cancel", "rqx", "danger")]))
         return
     REQFLOW.setdefault(uid, {"uid": uid})["link"] = text[:300]
     reqflow_lang_step(chat_id, uid)
@@ -1216,8 +1212,8 @@ def reqflow_link(chat_id, user, text):
 def reqflow_lang_step(chat_id, uid, mid=None):
     UFLOW.pop(uid, None)
     wstep(chat_id, uid, t(uid, "req_w_lang"),
-          kb([B("🇧🇩 Bangla", "rqg:bn")], [B("🇬🇧 English", "rqg:en")], [B("🌐 Both", "rqg:both")],
-             [B(BACK, "rqb:link")],
+          kb([B("🇧🇩 Bangla", "rqg:bn"), B("🇬🇧 English", "rqg:en")],
+             [B("🌐 Both", "rqg:both"), B(BACK, "rqb:link")],
              [B("❌ Cancel", "rqx", "danger")]), mid)
 
 
@@ -1229,9 +1225,8 @@ def reqflow_scope_step(chat_id, uid, mid=None):
         reqflow_confirm(chat_id, uid, mid)
         return
     wstep(chat_id, uid, t(uid, "req_w_scope"),
-          kb([B("📦 Full Season", "rqs:full")], [B("🔢 Specific Episode", "rqs:ep")],
-             [B(BACK, "rqb:lang")],
-             [B("❌ Cancel", "rqx", "danger")]), mid)
+          kb([B("📦 Full Season", "rqs:full"), B("🔢 Specific Episode", "rqs:ep")],
+             [B(BACK, "rqb:lang"), B("❌ Cancel", "rqx", "danger")]), mid)
 
 
 def reqflow_ep(chat_id, user, text):
@@ -2534,7 +2529,7 @@ def handle_callback(cb):
         else:
             UFLOW[uid] = "req_ep"
             wstep(chat_id, uid, t(uid, "req_w_ep"),
-                  kb([B(BACK, "rqb:scope")], [B("❌ Cancel", "rqx", "danger")]), mid)
+                  kb([B(BACK, "rqb:scope"), B("❌ Cancel", "rqx", "danger")]), mid)
         return
     if data == "rqok":
         answer_callback(cid); reqflow_save(chat_id, user, mid); return
