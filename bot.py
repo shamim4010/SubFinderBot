@@ -114,7 +114,8 @@ def _env_bootstrap():
         _gate_ch = [c.strip() for c in os.environ.get("GATE_CHANNELS", "").split(",") if c.strip()]
         _gate_on = os.environ.get("JOIN_GATE", "").strip().lower() in ("1", "true", "yes", "on")
         _subdl = os.environ.get("SUBDL_API_KEY", "").strip()
-        if _gate_ch or _gate_on or _subdl:
+        _gate_all = os.environ.get("GATE_ALL", "").strip().lower() in ("1", "true", "yes", "on")
+        if _gate_ch or _gate_on or _subdl or _gate_all:
             _st = {}
             if os.path.exists(SETTINGS_FILE):
                 try:
@@ -126,6 +127,8 @@ def _env_bootstrap():
                 _st["channels"] = _gate_ch; _changed = True
             if _gate_on and not _st.get("join_gate"):
                 _st["join_gate"] = True; _changed = True
+            if _gate_all and not _st.get("gate_all_downloads"):
+                _st["gate_all_downloads"] = True; _changed = True
             if _subdl and not any(s2.get("type") == "subdl" for s2 in _st.get("sources", [])):
                 _st.setdefault("sources", []).append(
                     {"name": "SubDL", "type": "subdl", "api_key": _subdl, "enabled": True})

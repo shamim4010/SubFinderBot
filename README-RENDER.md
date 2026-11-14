@@ -24,6 +24,7 @@ Season pack (full-pack.zip) repo te rakha hoy nai — bot start holei episode fi
    - `OS_PASSWORD` = OpenSubtitles password
    - `GATE_CHANNELS` = `@animesub_bd` (join gate er channel; ekadhik hole comma diye)
    - `JOIN_GATE` = `1` (join gate permanently ON rakhte)
+   - `GATE_ALL` = `1` (gate sudhu premium na, SOB feature/library download eo lagbe)
    - `SUBDL_API_KEY` = SubDL API key (optional — thakle SubDL source o auto add hobe)
    ⚠️ GATE_CHANNELS ar JOIN_GATE diye rakhle bot er vitor theke set kora gate ar kokhono redeploy a muchbe na.
 6. **Create Web Service** → deploy hote 2-5 min lagte pare
