@@ -873,6 +873,12 @@ def start_online(chat_id, uid):
         except Exception:
             feats = []
     if feats:
+        seen, uniq = set(), []
+        for f in feats:
+            k = (str(f["title"]).strip().lower(), f["year"], f["type"])
+            if k not in seen:
+                seen.add(k); uniq.append(f)
+        feats = uniq
         ctx["features"] = feats
         rows = []
         for i, f in enumerate(feats):
@@ -914,6 +920,22 @@ def merged_search(chat_id, uid, feature):
     show_subs_page(chat_id, uid)
 
 
+def fmt_count(n):
+    try:
+        n = int(n)
+    except Exception:
+        return str(n)
+    if n >= 1000000:
+        return f"{n / 1000000:.1f}".rstrip("0").rstrip(".") + "M"
+    if n >= 1000:
+        return f"{round(n / 1000)}K"
+    return str(n)
+
+
+def pretty_release(rel):
+    return str(rel).replace(".", " ").replace("_", " ")
+
+
 def lang_label(uid, code):
     return T(ulang(uid), "lang_" + code) if code in ("bn", "en") else str(code).upper()
 
@@ -935,7 +957,7 @@ def show_subs_page(chat_id, uid, mid=None):
     rows = []
     for i, r in enumerate(view[base:base + PAGE_SIZE]):
         se = f" S{r['season']}E{r['episode']}" if r.get("season") else ""
-        rows.append([B(f"{lang_label(uid, r['lang'])}{se} | ⬇{r['downloads']} | {r['release']}"[:60],
+        rows.append([B(f"{lang_label(uid, r['lang'])}{se} | ⬇{fmt_count(r['downloads'])} | {pretty_release(r['release'])}"[:60],
                        f"dl:{base + i}", "primary")])
     nav = []
     if page > 0:
