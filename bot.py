@@ -936,6 +936,54 @@ def pretty_release(rel):
     return str(rel).replace(".", " ").replace("_", " ")
 
 
+POSTER_CACHE = {}
+
+
+def find_poster(title, year, ftype):
+    key = (str(title).strip().lower(), year, ftype)
+    if key in POSTER_CACHE:
+        return POSTER_CACHE[key]
+    url = None
+    try:
+        media = "tvShow" if ftype == "tv" else "movie"
+        r = requests.get("https://itunes.apple.com/search",
+                         params={"term": title, "media": media, "limit": 5}, timeout=4)
+        items = [it for it in r.json().get("results", []) if it.get("artworkUrl100")]
+        pick = None
+        for it in items:
+            if year and str(year) in str(it.get("releaseDate", "")):
+                pick = it; break
+        if not pick and items:
+            pick = items[0]
+        if pick:
+            url = pick["artworkUrl100"].replace("100x100bb.jpg", "600x600bb.jpg")
+    except Exception:
+        url = None
+    if not url:
+        try:
+            q = {"query": "query($s:String){Page(perPage:3){media(search:$s,type:ANIME){title{romaji english} coverImage{large} startDate{year}}}}",
+                 "variables": {"s": title}}
+            r = requests.post("https://graphql.anilist.co", json=q, timeout=4)
+            media_list = ((r.json().get("data") or {}).get("Page") or {}).get("media") or []
+            for m in media_list:
+                img = (m.get("coverImage") or {}).get("large")
+                if img:
+                    url = img
+                    if not year or (m.get("startDate") or {}).get("year") == year:
+                        break
+        except Exception:
+            url = None
+    POSTER_CACHE[key] = url
+    return url
+
+
+def send_poster(chat_id, url, caption):
+    try:
+        return api_post("sendPhoto", {"chat_id": chat_id, "photo": url, "caption": caption})
+    except Exception:
+        return None
+
+
 def lang_label(uid, code):
     return T(ulang(uid), "lang_" + code) if code in ("bn", "en") else str(code).upper()
 
@@ -2561,7 +2609,13 @@ def handle_callback(cb):
         answer_callback(cid, "🔎")
         feats = CTX[chat_id].get("features", [])
         if parts[1].isdigit() and int(parts[1]) < len(feats):
-            merged_search(chat_id, uid, feats[int(parts[1])])
+            f = feats[int(parts[1])]
+            purl = find_poster(f["title"], f["year"], f["type"])
+            if purl:
+                icon = "📺" if f["type"] == "tv" else "🎬"
+                yr = f" ({f['year']})" if f["year"] else ""
+                send_poster(chat_id, purl, f"{icon} {f['title']}{yr}")
+            merged_search(chat_id, uid, f)
         return
     if parts[0] == "langf" and chat_id in CTX:
         answer_callback(cid)
