@@ -664,7 +664,7 @@ def require_access(chat_id, uid, feature="file", pending=None):
     if feature == "online" and SETTINGS.get("online_premium_only"):
         send_message(chat_id, t(uid, "premium_locked"), kb([B("⭐ Premium", "mn:premium")]))
         return False
-    if gate_active(feature) and joined_all(uid) is False:
+    if gate_active(feature) and joined_all(uid, fresh=True) is False:
         if pending:
             PENDING[uid] = pending
         send_message(chat_id, t(uid, "gate_prompt"), gate_kb(uid))
@@ -672,13 +672,14 @@ def require_access(chat_id, uid, feature="file", pending=None):
     return True
 
 
-def gate_blocked(uid):
-    """Start-flow hard gate: join_gate on + channel thakle, join na kora user samne jete parbe na."""
+def gate_blocked(uid, fresh=True):
+    """Hard gate: join_gate on + channel thakle, member na hole KONO feature cholbe na.
+    Default live (fresh) check — join kore leave dile porer action ei block hobe."""
     if not SETTINGS.get("join_gate") or not SETTINGS.get("channels"):
         return False
     if is_admin(uid) or has_perks(uid):
         return False
-    return joined_all(uid) is False
+    return joined_all(uid, fresh) is False
 
 
 def show_gate(chat_id, uid):
