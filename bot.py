@@ -1026,6 +1026,27 @@ FORM_HTML = """<!DOCTYPE html>
 
 
 REQFLOW = {}
+def wstep(chat_id, uid, text, markup=None, mid=None):
+    """Wizard page: ager bot message tai edit kore next page dekhay (notun message na).
+    Edit na hole notun message pathiye tar id REQFLOW te rekhe dey."""
+    f = REQFLOW.setdefault(uid, {"uid": uid})
+    m = mid or f.get("mid")
+    if m:
+        try:
+            r = edit_message(chat_id, m, text, markup)
+            if (r and r.get("ok")) or "not modified" in str((r or {}).get("description", "")):
+                f["mid"] = m
+                return
+        except Exception:
+            pass
+    r = send_message(chat_id, text, markup)
+    try:
+        f["mid"] = (r or {}).get("result", {}).get("message_id")
+    except Exception:
+        f["mid"] = None
+
+
+BACK = "⬅️ Back"
 REQ_TYPES = {"movie": "🎬 Movie", "anime": "📺 Anime", "drama": "🎭 Drama"}
 REQ_LANGS = {"bn": "🇧🇩 Bangla", "en": "🇬🇧 English", "both": "🌐 Bangla + English"}
 
@@ -1057,7 +1078,7 @@ def start_req_wizard(chat_id, user):
         reqflow_type(chat_id, uid)
     else:
         UFLOW[uid] = "req_title"
-        send_message(chat_id, t(uid, "req_w_title"), kb([B("❌ Cancel", "rqx")]))
+        wstep(chat_id, uid, t(uid, "req_w_title"), kb([B("❌ Cancel", "rqx")]))
 
 
 def reqflow_title(chat_id, user, text):
@@ -1066,17 +1087,19 @@ def reqflow_title(chat_id, user, text):
     reqflow_type(chat_id, uid)
 
 
-def reqflow_type(chat_id, uid):
+def reqflow_type(chat_id, uid, mid=None):
     f = REQFLOW.get(uid) or {}
-    send_message(chat_id, t(uid, "req_w_type", title=esc(f.get("title", ""))),
-                 kb([B("🎬 Movie", "rqt:movie"), B("📺 Anime", "rqt:anime"), B("🎭 Drama", "rqt:drama")],
-                    [B("✏️ Edit name", "rqedit"), B("❌ Cancel", "rqx")]))
+    UFLOW.pop(uid, None)
+    wstep(chat_id, uid, t(uid, "req_w_type", title=esc(f.get("title", ""))),
+          kb([B("🎬 Movie", "rqt:movie"), B("📺 Anime", "rqt:anime"), B("🎭 Drama", "rqt:drama")],
+             [B("✏️ Edit name", "rqedit"), B(BACK, "rqb:title")],
+             [B("❌ Cancel", "rqx")]), mid)
 
 
-def reqflow_link_step(chat_id, uid):
+def reqflow_link_step(chat_id, uid, mid=None):
     UFLOW[uid] = "req_link"
-    send_message(chat_id, t(uid, "req_w_link"),
-                 kb([B("⏭ Skip", "rql:skip")], [B("❌ Cancel", "rqx")]))
+    wstep(chat_id, uid, t(uid, "req_w_link"),
+          kb([B("⏭ Skip", "rql:skip")], [B(BACK, "rqb:type"), B("❌ Cancel", "rqx")]), mid)
 
 
 def reqflow_link(chat_id, user, text):
@@ -1084,28 +1107,31 @@ def reqflow_link(chat_id, user, text):
     text = text.strip()
     if "http" not in text and "." not in text:
         UFLOW[uid] = "req_link"
-        send_message(chat_id, t(uid, "req_link_bad"),
-                     kb([B("⏭ Skip", "rql:skip")], [B("❌ Cancel", "rqx")]))
+        wstep(chat_id, uid, t(uid, "req_link_bad"),
+              kb([B("⏭ Skip", "rql:skip")], [B(BACK, "rqb:type"), B("❌ Cancel", "rqx")]))
         return
     REQFLOW.setdefault(uid, {"uid": uid})["link"] = text[:300]
     reqflow_lang_step(chat_id, uid)
 
 
-def reqflow_lang_step(chat_id, uid):
-    send_message(chat_id, t(uid, "req_w_lang"),
-                 kb([B("🇧🇩 Bangla", "rqg:bn"), B("🇬🇧 English", "rqg:en")],
-                    [B("🌐 Both", "rqg:both"), B("❌ Cancel", "rqx")]))
+def reqflow_lang_step(chat_id, uid, mid=None):
+    UFLOW.pop(uid, None)
+    wstep(chat_id, uid, t(uid, "req_w_lang"),
+          kb([B("🇧🇩 Bangla", "rqg:bn"), B("🇬🇧 English", "rqg:en")],
+             [B("🌐 Both", "rqg:both"), B(BACK, "rqb:link")],
+             [B("❌ Cancel", "rqx")]), mid)
 
 
-def reqflow_scope_step(chat_id, uid):
+def reqflow_scope_step(chat_id, uid, mid=None):
     f = REQFLOW.get(uid) or {}
+    UFLOW.pop(uid, None)
     if f.get("type") == "movie":
         f["scope"] = "Full movie"
-        reqflow_confirm(chat_id, uid)
+        reqflow_confirm(chat_id, uid, mid)
         return
-    send_message(chat_id, t(uid, "req_w_scope"),
-                 kb([B("📦 Full Season", "rqs:full"), B("🔢 Specific Episode", "rqs:ep")],
-                    [B("❌ Cancel", "rqx")]))
+    wstep(chat_id, uid, t(uid, "req_w_scope"),
+          kb([B("📦 Full Season", "rqs:full"), B("🔢 Specific Episode", "rqs:ep")],
+             [B(BACK, "rqb:lang"), B("❌ Cancel", "rqx")]), mid)
 
 
 def reqflow_ep(chat_id, user, text):
@@ -1114,20 +1140,27 @@ def reqflow_ep(chat_id, user, text):
     reqflow_confirm(chat_id, uid)
 
 
-def reqflow_confirm(chat_id, uid):
+def reqflow_confirm(chat_id, uid, mid=None):
     f = REQFLOW.get(uid) or {}
-    send_message(chat_id, t(uid, "req_w_confirm", title=esc(f.get("title", "")),
+    UFLOW.pop(uid, None)
+    back = "rqb:lang" if f.get("type") == "movie" else "rqb:scope"
+    wstep(chat_id, uid, t(uid, "req_w_confirm", title=esc(f.get("title", "")),
                             type=REQ_TYPES.get(f.get("type"), "-"),
                             lang=REQ_LANGS.get(f.get("lang"), "-"),
                             scope=esc(f.get("scope", "-")), link=esc(f.get("link") or "—")),
-                 kb([B("✅ Confirm", "rqok")], [B("✏️ Edit name", "rqedit"), B("❌ Cancel", "rqx")]))
+          kb([B("✅ Confirm", "rqok")], [B("✏️ Edit name", "rqedit"), B(BACK, back)],
+             [B("❌ Cancel", "rqx")]), mid)
 
 
 def reqflow_title_edit(chat_id, user, text):
-    """Confirm/type screen theke naam edit — notun naam niye soja confirm screen a phire jay."""
+    """Naam edit — jekhan theke esechilo (type ba confirm) sekhanei phire jay."""
     uid = user["id"]
-    REQFLOW.setdefault(uid, {"uid": uid})["title"] = text.strip()[:120]
-    reqflow_confirm(chat_id, uid)
+    f = REQFLOW.setdefault(uid, {"uid": uid})
+    f["title"] = text.strip()[:120]
+    if f.pop("edit_from", "confirm") == "type":
+        reqflow_type(chat_id, uid)
+    else:
+        reqflow_confirm(chat_id, uid)
 
 
 def _req_reply(chat_id, mid, text):
@@ -2335,29 +2368,59 @@ def handle_callback(cb):
             send_message(chat_id, t(uid, "req_cancelled"))
         return
     if data == "rqwiz":
-        answer_callback(cid); start_req_wizard(chat_id, user); return
+        answer_callback(cid)
+        try:
+            edit_markup(chat_id, mid, {"inline_keyboard": []})
+        except Exception:
+            pass
+        REQFLOW.pop(uid, None)
+        start_req_wizard(chat_id, user); return
     if data == "rqedit":
-        f = REQFLOW.get(uid) or {}
+        f = REQFLOW.setdefault(uid, {"uid": uid})
+        f["edit_from"] = "confirm" if (f.get("type") and f.get("lang")) else "type"
         UFLOW[uid] = "req_title_edit"
         answer_callback(cid)
-        send_message(chat_id, t(uid, "req_w_edit", title=esc(f.get("title", ""))),
-                     kb([B("❌ Cancel", "rqx")])); return
+        wstep(chat_id, uid, t(uid, "req_w_edit", title=esc(f.get("title", ""))),
+              kb([B(BACK, "rqb:back2"), B("❌ Cancel", "rqx")]), mid); return
+    if parts[0] == "rqb" and len(parts) == 2:
+        answer_callback(cid)
+        dest = parts[1]
+        if dest == "title":
+            UFLOW[uid] = "req_title"
+            wstep(chat_id, uid, t(uid, "req_w_title"), kb([B("❌ Cancel", "rqx")]), mid)
+        elif dest == "type":
+            reqflow_type(chat_id, uid, mid)
+        elif dest == "link":
+            reqflow_link_step(chat_id, uid, mid)
+        elif dest == "lang":
+            reqflow_lang_step(chat_id, uid, mid)
+        elif dest == "scope":
+            reqflow_scope_step(chat_id, uid, mid)
+        elif dest == "back2":
+            f = REQFLOW.get(uid) or {}
+            UFLOW.pop(uid, None)
+            if f.get("edit_from") == "type":
+                reqflow_type(chat_id, uid, mid)
+            else:
+                reqflow_confirm(chat_id, uid, mid)
+        return
     if parts[0] == "rqt" and len(parts) == 2 and parts[1] in REQ_TYPES:
         REQFLOW.setdefault(uid, {"uid": uid})["type"] = parts[1]
-        answer_callback(cid); reqflow_link_step(chat_id, uid); return
+        answer_callback(cid); reqflow_link_step(chat_id, uid, mid); return
     if data == "rql:skip":
-        answer_callback(cid); reqflow_lang_step(chat_id, uid); return
+        answer_callback(cid); reqflow_lang_step(chat_id, uid, mid); return
     if parts[0] == "rqg" and len(parts) == 2 and parts[1] in REQ_LANGS:
         REQFLOW.setdefault(uid, {"uid": uid})["lang"] = parts[1]
-        answer_callback(cid); reqflow_scope_step(chat_id, uid); return
+        answer_callback(cid); reqflow_scope_step(chat_id, uid, mid); return
     if parts[0] == "rqs" and len(parts) == 2:
         answer_callback(cid)
         if parts[1] == "full":
             REQFLOW.setdefault(uid, {"uid": uid})["scope"] = "Full Season"
-            reqflow_confirm(chat_id, uid)
+            reqflow_confirm(chat_id, uid, mid)
         else:
             UFLOW[uid] = "req_ep"
-            send_message(chat_id, t(uid, "req_w_ep"), kb([B("❌ Cancel", "rqx")]))
+            wstep(chat_id, uid, t(uid, "req_w_ep"),
+                  kb([B(BACK, "rqb:scope"), B("❌ Cancel", "rqx")]), mid)
         return
     if data == "rqok":
         answer_callback(cid); reqflow_save(chat_id, user, mid); return
