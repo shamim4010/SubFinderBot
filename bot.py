@@ -402,6 +402,24 @@ def send_message(chat_id, text, markup=None):
     return api_post("sendMessage", data)
 
 
+EFFECTS = {"party": "5046509860389126442", "heart": "5159385139981059251",
+           "fire": "5104841245755180586", "like": "5107584321108051014"}
+
+
+def send_fx(chat_id, text, markup=None, effect="party"):
+    """Message effect (confetti/heart animation) shoho pathay; support na thakle plain."""
+    eid = EFFECTS.get(effect)
+    if eid:
+        data = {"chat_id": chat_id, "text": text[:4000], "parse_mode": "HTML",
+                "disable_web_page_preview": True, "message_effect_id": eid}
+        if markup:
+            data["reply_markup"] = json.dumps(markup)
+        r = api_post("sendMessage", data)
+        if r and r.get("ok"):
+            return r
+    return send_message(chat_id, text, markup)
+
+
 def edit_message(chat_id, message_id, text, markup=None):
     data = {"chat_id": chat_id, "message_id": message_id, "text": text[:4000],
             "parse_mode": "HTML", "disable_web_page_preview": True}
@@ -795,6 +813,46 @@ def first_os_source():
     return None, None
 
 
+def _spin_search(chat_id, uid, mid, stop):
+    """Searching message a spinner animation — search chola kalin edit loop."""
+    frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    base = t(uid, "searching_online")
+    i = 0
+    while not stop.wait(0.7) and i < 45:
+        i += 1
+        try:
+            edit_message(chat_id, mid, f"{base} {frames[i % len(frames)]}")
+        except Exception:
+            break
+
+
+def _spin_begin(chat_id, uid):
+    ctx = CTX.get(chat_id)
+    if not ctx or "spin_stop" in ctx:
+        return
+    r = send_message(chat_id, t(uid, "searching_online"))
+    mid = (r or {}).get("result", {}).get("message_id")
+    if mid:
+        ctx["spin_mid"] = mid
+        ctx["spin_stop"] = threading.Event()
+        threading.Thread(target=_spin_search, args=(chat_id, uid, mid, ctx["spin_stop"]),
+                         daemon=True).start()
+
+
+def _spin_end(chat_id, delete=False):
+    ctx = CTX.get(chat_id) or {}
+    stop = ctx.pop("spin_stop", None)
+    if stop:
+        stop.set()
+    mid = ctx.pop("spin_mid", None)
+    if delete and mid:
+        try:
+            api_post("deleteMessage", {"chat_id": chat_id, "message_id": mid})
+        except Exception:
+            pass
+    return mid
+
+
 def start_online(chat_id, uid):
     raw = LAST_QUERY.get(chat_id)
     if not raw:
@@ -802,11 +860,11 @@ def start_online(chat_id, uid):
     if not SOURCE_OBJS:
         send_message(chat_id, t(uid, "online_none")); return
     title_q, season, episode = parse_query(raw)
-    send_message(chat_id, t(uid, "searching_online"))
     chat_action(chat_id)
     ctx = {"title_q": title_q, "season": season, "episode": episode,
            "features": [], "subs": [], "view": [], "page": 0, "langf": "all"}
     CTX[chat_id] = ctx
+    _spin_begin(chat_id, uid)
     _, os_obj = first_os_source()
     feats = []
     if os_obj:
@@ -821,7 +879,10 @@ def start_online(chat_id, uid):
             icon = "📺" if f["type"] == "tv" else "🎬"
             yr = f" ({f['year']})" if f["year"] else ""
             rows.append([B(f"{icon} {f['title']}{yr}"[:60], f"feat:{i}")])
-        send_message(chat_id, t(uid, "pick_title"), {"inline_keyboard": rows})
+        smid = _spin_end(chat_id)
+        r = edit_message(chat_id, smid, t(uid, "pick_title"), {"inline_keyboard": rows}) if smid else None
+        if not (r and r.get("ok")):
+            send_message(chat_id, t(uid, "pick_title"), {"inline_keyboard": rows})
     else:
         merged_search(chat_id, uid, None)
 
@@ -829,6 +890,7 @@ def start_online(chat_id, uid):
 def merged_search(chat_id, uid, feature):
     ctx = CTX[chat_id]
     ctx["feature"] = feature
+    _spin_begin(chat_id, uid)
     results, errors = [], []
     for name, obj in SOURCE_OBJS.items():
         try:
@@ -846,7 +908,9 @@ def merged_search(chat_id, uid, feature):
     results.sort(key=lambda x: x.get("downloads", 0), reverse=True)
     ctx["subs"], ctx["page"] = results, 0
     if not results and errors:
+        _spin_end(chat_id, delete=True)
         send_message(chat_id, t(uid, "online_fail", err=esc("; ".join(errors)[:150]))); return
+    _spin_end(chat_id, delete=True)
     show_subs_page(chat_id, uid)
 
 
@@ -1206,6 +1270,20 @@ def _req_reply(chat_id, mid, text):
     send_message(chat_id, text)
 
 
+def _req_done_reply(chat_id, mid, uid):
+    """Request save: wizard page delete kore confetti effect shoho notun confirmation."""
+    text = t(uid, "req_ok")
+    r = send_fx(chat_id, text, effect="party")
+    if r and r.get("ok"):
+        if mid:
+            try:
+                api_post("deleteMessage", {"chat_id": chat_id, "message_id": mid})
+            except Exception:
+                pass
+        return
+    _req_reply(chat_id, mid, text)
+
+
 def reqflow_save(chat_id, user, mid=None):
     uid = user["id"]
     f = REQFLOW.pop(uid, None) or {}
@@ -1219,7 +1297,7 @@ def reqflow_save(chat_id, user, mid=None):
                      "lang": f.get("lang", ""), "scope": f.get("scope", ""),
                      "ts": time.strftime("%Y-%m-%d %H:%M"), "status": "pending"})
         mark("reqs")
-    _req_reply(chat_id, mid, t(uid, "req_ok"))
+    _req_done_reply(chat_id, mid, uid)
     for aid in admin_ids():
         send_message(aid, T(ulang(aid), "a_req_new2", q=esc(title), name=esc(user.get("first_name", "")), uid=uid,
                             type=REQ_TYPES.get(f.get("type"), "-"), lang=REQ_LANGS.get(f.get("lang"), "-"),
@@ -1234,7 +1312,7 @@ def fulfil_requests(title, slug):
         base, _, _ = parse_query(r["q"])
         if base and (nt in base or base in nt or ns in base or base in ns):
             r["status"] = "done"; n += 1
-            send_message(r["uid"], t(r["uid"], "req_done", q=esc(r["q"])))
+            send_fx(r["uid"], t(r["uid"], "req_done", q=esc(r["q"])), effect="party")
     if n:
         mark("reqs")
     return n
@@ -2054,7 +2132,7 @@ def admin_callback(cb, parts):
             if r:
                 r["status"] = "done" if arg == "done" else "deleted"; mark("reqs")
                 if arg == "done":
-                    send_message(r["uid"], t(r["uid"], "req_done", q=esc(r["q"])))
+                    send_fx(r["uid"], t(r["uid"], "req_done", q=esc(r["q"])), effect="party")
             view_reqs(c, mid)
         else:
             view_reqs(c, mid)
