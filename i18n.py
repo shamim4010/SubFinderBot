@@ -139,11 +139,18 @@ add("quota_hit",
     "⛔ <b>Daily download limit reached</b> ({used}/{limit})\n{D}\n"
     "🎁 Invite friends for bonus downloads\n🎟 Redeem a code\n⭐ Premium is unlimited\n\n"
     "🔄 Your limit resets tomorrow.")
-add("gate_prompt", "⭐ এটি <b>প্রিমিয়াম ফিচার</b>! ব্যবহার করতে নিচের চ্যানেলগুলোতে জয়েন করুন 👇",
-    "⭐ This is a <b>premium feature</b>! Join the channels below to unlock it 👇")
+add("gate_prompt", "🔒 Bot ta use korte age nicher channel gulote <b>join</b> koro 👇\nJoin kore ✅ button chap dilei khule jabe",
+    "🔒 To use the bot, <b>join</b> the channels below first 👇\nThen tap the ✅ button and you're in")
 add("join_check", "✅ জয়েন করেছি, চেক করুন", "✅ I've joined — check")
 add("join_ok", "✅ জয়েন কনফার্মড! এখন ব্যবহার করতে পারবেন।", "✅ Join confirmed! You're in.")
 add("join_no", "এখনো সব চ্যানেলে জয়েন হয়নি", "You haven't joined all channels yet")
+add("join_check_fail", "⚠️ এখন জয়েন চেক করা যাচ্ছে না, একটু পরে আবার চেষ্টা করো",
+    "⚠️ Couldn't verify your join right now — please try again in a bit")
+add("a_gate_warn",
+    "⚠️ <b>Join gate warning:</b> {ch} চ্যানেলে member check fail হচ্ছে — সম্ভবত বট ওই চ্যানেলে <b>অ্যাডমিন না</b>।\n"
+    "বটকে চ্যানেলে অ্যাডমিন বানাও, না হলে gate কারো জন্যই ঠিকমতো কাজ করবে না।",
+    "⚠️ <b>Join gate warning:</b> member checks are failing for {ch} — the bot is probably not an <b>admin</b> there.\n"
+    "Make the bot an admin in that channel, otherwise the gate won't work properly for anyone.")
 add("premium_locked", "🔒 অনলাইন সার্চ এখন শুধু <b>প্রিমিয়াম</b> ইউজারদের জন্য।\n🎟 কোড থাকলে /redeem করুন।",
     "🔒 Online search is <b>Premium-only</b> right now.\n🎟 Have a code? Use /redeem.")
 add("premium_card",

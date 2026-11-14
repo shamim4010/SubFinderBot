@@ -499,6 +499,7 @@ LAST_QUERY, CTX, PENDING = {}, {}, {}
 ADMIN_FLOW, UFLOW = {}, {}
 TOOLS = OrderedDict()
 JOIN_CACHE = {}
+GATE_WARNED = set()
 LAST_MSG, LAST_FB = {}, {}
 CHAT_LOCKS = defaultdict(threading.Lock)
 
@@ -587,19 +588,39 @@ def quota_text(uid):
 
 
 def member_of(uid, channel, fresh=False):
+    """True = member, False = member na, None = check ei kora jay ni (bot channel a admin na hole emon hoy)."""
     key = (uid, channel)
     c = JOIN_CACHE.get(key)
     if c and not fresh and time.time() - c[1] < 60:
         return c[0]
     r = api_post("getChatMember", {"chat_id": channel, "user_id": uid})
+    if not r.get("ok"):
+        if channel not in GATE_WARNED:
+            GATE_WARNED.add(channel)
+            if ADMIN_ID:
+                try:
+                    send_message(ADMIN_ID, t(ADMIN_ID, "a_gate_warn", ch=esc(str(channel))))
+                except Exception:
+                    pass
+        return None
     ok = r.get("result", {}).get("status", "") in ("member", "administrator", "creator")
     JOIN_CACHE[key] = (ok, time.time())
     return ok
 
 
 def joined_all(uid, fresh=False):
+    """True = sob channel a ace, False = kono tay nei, None = check kora jay ni."""
     chans = SETTINGS.get("channels", [])
-    return all(member_of(uid, c, fresh) for c in chans) if chans else True
+    if not chans:
+        return True
+    unknown = False
+    for c in chans:
+        m = member_of(uid, c, fresh)
+        if m is False:
+            return False
+        if m is None:
+            unknown = True
+    return None if unknown else True
 
 
 def gate_active(feature):
@@ -616,12 +637,12 @@ def gate_kb(uid):
 
 
 def require_access(chat_id, uid, feature="file", pending=None):
-    if has_perks(uid):
+    if has_perks(uid) or is_admin(uid):
         return True
     if feature == "online" and SETTINGS.get("online_premium_only"):
         send_message(chat_id, t(uid, "premium_locked"), kb([B("⭐ Premium", "mn:premium")]))
         return False
-    if gate_active(feature) and not joined_all(uid):
+    if gate_active(feature) and joined_all(uid) is False:
         if pending:
             PENDING[uid] = pending
         send_message(chat_id, t(uid, "gate_prompt"), gate_kb(uid))
@@ -635,7 +656,7 @@ def gate_blocked(uid):
         return False
     if is_admin(uid) or has_perks(uid):
         return False
-    return not joined_all(uid)
+    return joined_all(uid) is False
 
 
 def show_gate(chat_id, uid):
@@ -1953,13 +1974,16 @@ def handle_callback(cb):
     if data == "redeem":
         answer_callback(cid); UFLOW[uid] = "redeem"; send_message(chat_id, t(uid, "redeem_ask")); return
     if data == "checkjoin":
-        if joined_all(uid, fresh=True):
+        st = joined_all(uid, fresh=True)
+        if st is True:
             answer_callback(cid, t(uid, "join_ok"))
             if PENDING.pop(uid, None) == "online":
                 send_message(chat_id, t(uid, "join_ok"))
                 start_online(chat_id, uid)
             else:
                 send_welcome(chat_id, user)
+        elif st is None:
+            answer_callback(cid, t(uid, "join_check_fail"), True)
         else:
             answer_callback(cid, t(uid, "join_no"), True)
         return
