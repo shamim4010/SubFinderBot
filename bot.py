@@ -961,7 +961,7 @@ def reqflow_type(chat_id, uid):
     f = REQFLOW.get(uid) or {}
     send_message(chat_id, t(uid, "req_w_type", title=esc(f.get("title", ""))),
                  kb([B("🎬 Movie", "rqt:movie"), B("📺 Anime", "rqt:anime"), B("🎭 Drama", "rqt:drama")],
-                    [B("❌ Cancel", "rqx")]))
+                    [B("✏️ Edit name", "rqedit"), B("❌ Cancel", "rqx")]))
 
 
 def reqflow_link_step(chat_id, uid):
@@ -1011,7 +1011,14 @@ def reqflow_confirm(chat_id, uid):
                             type=REQ_TYPES.get(f.get("type"), "-"),
                             lang=REQ_LANGS.get(f.get("lang"), "-"),
                             scope=esc(f.get("scope", "-")), link=esc(f.get("link") or "—")),
-                 kb([B("✅ Confirm", "rqok")], [B("❌ Cancel", "rqx")]))
+                 kb([B("✅ Confirm", "rqok")], [B("✏️ Edit name", "rqedit"), B("❌ Cancel", "rqx")]))
+
+
+def reqflow_title_edit(chat_id, user, text):
+    """Confirm/type screen theke naam edit — notun naam niye soja confirm screen a phire jay."""
+    uid = user["id"]
+    REQFLOW.setdefault(uid, {"uid": uid})["title"] = text.strip()[:120]
+    reqflow_confirm(chat_id, uid)
 
 
 def reqflow_save(chat_id, user):
@@ -2001,6 +2008,8 @@ def handle_message(msg):
             reqflow_link(chat_id, user, text)
         elif kind == "req_ep":
             reqflow_ep(chat_id, user, text)
+        elif kind == "req_title_edit":
+            reqflow_title_edit(chat_id, user, text)
         return
 
     if cmd in USER_VIEWS:
@@ -2177,6 +2186,12 @@ def handle_callback(cb):
     if data == "rqx":
         REQFLOW.pop(uid, None); UFLOW.pop(uid, None)
         answer_callback(cid); send_message(chat_id, t(uid, "req_cancelled")); return
+    if data == "rqedit":
+        f = REQFLOW.get(uid) or {}
+        UFLOW[uid] = "req_title_edit"
+        answer_callback(cid)
+        send_message(chat_id, t(uid, "req_w_edit", title=esc(f.get("title", ""))),
+                     kb([B("❌ Cancel", "rqx")])); return
     if parts[0] == "rqt" and len(parts) == 2 and parts[1] in REQ_TYPES:
         REQFLOW.setdefault(uid, {"uid": uid})["type"] = parts[1]
         answer_callback(cid); reqflow_link_step(chat_id, uid); return

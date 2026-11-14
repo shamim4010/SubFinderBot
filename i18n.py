@@ -219,6 +219,8 @@ add("req_w_ep", "🔢 সিজন ও এপিসোড লেখো — য�
 add("req_w_confirm", "📩 <b>রিকুয়েস্ট চেক করো</b>\n\n🎞 Title: <b>{title}</b>\n📌 Type: {type}\n🌐 Subtitle: {lang}\n📦 Scope: {scope}\n🔗 Link: {link}\n\nসব ঠিক থাকলে <b>Confirm</b> চাপো 👇",
     "📩 <b>Check your request</b>\n\n🎞 Title: <b>{title}</b>\n📌 Type: {type}\n🌐 Subtitle: {lang}\n📦 Scope: {scope}\n🔗 Link: {link}\n\nIf everything looks right, tap <b>Confirm</b> 👇")
 add("req_cancelled", "❌ রিকুয়েস্ট বাতিল করা হয়েছে।", "❌ Request cancelled.")
+add("req_w_edit", "✏️ সঠিক নামটা টাইপ করে পাঠাও 👇\nআগের নাম: <b>{title}</b>",
+    "✏️ Type the correct name 👇\nCurrent name: <b>{title}</b>")
 add("a_req_new2", "📩 <b>নতুন রিকুয়েস্ট</b>: {q}\n📌 {type} · 🌐 {lang} · 📦 {scope}\n🔗 {link}\n👤 {name} (<code>{uid}</code>)",
     "📩 <b>New request</b>: {q}\n📌 {type} · 🌐 {lang} · 📦 {scope}\n🔗 {link}\n👤 {name} (<code>{uid}</code>)")
 add("req_need", "আগে যে সাবটাইটেল চান তার <b>নাম লিখুন</b>, তারপর রিকুয়েস্ট বাটন কাজ করবে।",
