@@ -31,14 +31,14 @@ add("lang_pick", "🌐 <b>ভাষা বেছে নিন · Choose your lan
     "🌐 <b>Choose your language · ভাষা বেছে নিন</b>")
 add("lang_set", "✅ ভাষা সেট হয়েছে: <b>বাংলা</b>", "✅ Language set: <b>English</b>")
 add("welcome",
-    "✦ <b>স্বাগতম, {name}!</b> ✦\n{D}\n<b>SubFinder 2050</b> — আপনার পার্সোনাল সাবটাইটেল সহকারী।\n\n"
+    "✦ <b>স্বাগতম, {name}!</b> ✦\n{D}\n<b>SubFinder</b> — আপনার পার্সোনাল সাবটাইটেল সহকারী।\n\n"
     "🎬 যেকোনো মুভি, অ্যানিমে বা সিরিজের <b>নাম লিখে পাঠান</b>\n"
     "📁 লাইব্রেরি + 🌐 অনলাইন সোর্স — একসাথে সার্চ\n"
     "🇧🇩 বাংলা ও 🇬🇧 English সাবটাইটেল\n"
     "⏱ সিঙ্ক ঠিক করার টুল · 🔄 VTT কনভার্টার\n"
     "🎁 ইনভাইট করুন, বোনাস ডাউনলোড জিতুন\n\n"
     "<i>উদাহরণ:</i> <code>Interstellar</code> · <code>Code Geass S2 E12</code>",
-    "✦ <b>Welcome, {name}!</b> ✦\n{D}\n<b>SubFinder 2050</b> — your personal subtitle companion.\n\n"
+    "✦ <b>Welcome, {name}!</b> ✦\n{D}\n<b>SubFinder</b> — your personal subtitle companion.\n\n"
     "🎬 Just <b>type any movie, anime or series name</b>\n"
     "📁 Library + 🌐 online sources — searched together\n"
     "🇧🇩 Bangla & 🇬🇧 English subtitles\n"
@@ -123,10 +123,10 @@ add("dl_fail", "ডাউনলোড হয়নি 😔 {err}", "Download fai
 add("src_off", "সোর্সটি এখন বন্ধ আছে।", "That source is currently off.")
 add("old_result", "এই রেজাল্ট পুরনো, আবার সার্চ করুন।", "This result is stale — please search again.")
 add("sending", "📤 পাঠাচ্ছি...", "📤 Sending...")
-add("caption_local", "🎬 {title}\n🇧🇩 বাংলা সাবটাইটেল · SubFinder 2050", "🎬 {title}\n🇧🇩 Bangla subtitle · SubFinder 2050")
-add("caption_online", "🎬 {title}\n{lang} সাবটাইটেল · {src} · SubFinder 2050", "🎬 {title}\n{lang} subtitle · {src} · SubFinder 2050")
-add("caption_zip", "📦 {title} — ফুল সিজন প্যাক ⭐\nSubFinder 2050", "📦 {title} — Full Season Pack ⭐\nSubFinder 2050")
-add("caption_tool", "🎬 {title}\n🛠 {label} · SubFinder 2050", "🎬 {title}\n🛠 {label} · SubFinder 2050")
+add("caption_local", "🎬 {title}\n🇧🇩 বাংলা সাবটাইটেল · SubFinder", "🎬 {title}\n🇧🇩 Bangla subtitle · SubFinder")
+add("caption_online", "🎬 {title}\n{lang} সাবটাইটেল · {src} · SubFinder", "🎬 {title}\n{lang} subtitle · {src} · SubFinder")
+add("caption_zip", "📦 {title} — ফুল সিজন প্যাক ⭐\nSubFinder", "📦 {title} — Full Season Pack ⭐\nSubFinder")
+add("caption_tool", "🎬 {title}\n🛠 {label} · SubFinder", "🎬 {title}\n🛠 {label} · SubFinder")
 add("tool_expired", "টুল সেশন শেষ হয়ে গেছে — সাবটাইটেলটি আবার নিন।", "Tool session expired — fetch the subtitle again.")
 add("tool_vtt", "🔄 VTT বানান", "🔄 Make VTT")
 add("tool_hint", "⏱ সিঙ্ক ঠিক করুন (ফ্রি)", "⏱ Fix sync (free)")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SubFinder 2050  (v6)
+SubFinder  (v6)
 --------------------
 Telegram subtitle bot — bilingual (বাংলা / English), library + online sources.
 
@@ -626,6 +626,19 @@ def require_access(chat_id, uid, feature="file", pending=None):
         send_message(chat_id, t(uid, "gate_prompt"), gate_kb(uid))
         return False
     return True
+
+
+def gate_blocked(uid):
+    """Start-flow hard gate: join_gate on + channel thakle, join na kora user samne jete parbe na."""
+    if not SETTINGS.get("join_gate") or not SETTINGS.get("channels"):
+        return False
+    if is_admin(uid) or has_perks(uid):
+        return False
+    return not joined_all(uid)
+
+
+def show_gate(chat_id, uid):
+    send_message(chat_id, t(uid, "gate_prompt"), gate_kb(uid))
 
 
 # ================================================================ delivery + tools
@@ -1788,8 +1801,16 @@ def handle_message(msg):
             process_referral(user, rec, payload)
         if rec["lang"] is None:
             send_message(chat_id, T("en", "lang_pick"), lang_picker_kb(":w"))
+        elif gate_blocked(uid):
+            show_gate(chat_id, uid)
         else:
             send_welcome(chat_id, user)
+        return
+    if gate_blocked(uid) and cmd not in ("/lang", "/id", "/cancel"):
+        if rec["lang"] is None:
+            send_message(chat_id, T("en", "lang_pick"), lang_picker_kb(":w"))
+        else:
+            show_gate(chat_id, uid)
         return
     if cmd == "/admin" and ADMIN_ID is None:
         send_message(chat_id, t(uid, "a_not_set")); return
@@ -1867,12 +1888,20 @@ def handle_callback(cb):
             answer_callback(cid, t(uid, "a_denied"), True); return
         admin_callback(cb, parts); return
 
+    if gate_blocked(uid) and parts[0] != "lg" and data != "checkjoin":
+        answer_callback(cid, t(uid, "join_no"), True)
+        show_gate(chat_id, uid)
+        return
+
     # ---- language
     if parts[0] == "lg" and len(parts) >= 2 and parts[1] in LANGS:
         rec["lang"] = parts[1]; mark("users")
         answer_callback(cid, T(parts[1], "lang_set").replace("<b>", "").replace("</b>", ""))
         if len(parts) > 2 and parts[2] == "w":
-            send_welcome(chat_id, user)
+            if gate_blocked(uid):
+                show_gate(chat_id, uid)
+            else:
+                send_welcome(chat_id, user)
         else:
             send_message(chat_id, t(uid, "lang_set"), reply_kb(uid)); view_settings(chat_id)
         return
@@ -1899,9 +1928,11 @@ def handle_callback(cb):
     if data == "checkjoin":
         if joined_all(uid, fresh=True):
             answer_callback(cid, t(uid, "join_ok"))
-            send_message(chat_id, t(uid, "join_ok"))
             if PENDING.pop(uid, None) == "online":
+                send_message(chat_id, t(uid, "join_ok"))
                 start_online(chat_id, uid)
+            else:
+                send_welcome(chat_id, user)
         else:
             answer_callback(cid, t(uid, "join_no"), True)
         return
@@ -1932,7 +1963,7 @@ def handle_callback(cb):
             fp = os.path.join(BASE, h["p"])
             if os.path.exists(fp):
                 answer_callback(cid, t(uid, "sending"))
-                send_document(chat_id, fp, f"🕘 {esc(h['t'])}\nSubFinder 2050", tools_kb(uid, fp)); return
+                send_document(chat_id, fp, f"🕘 {esc(h['t'])}\nSubFinder", tools_kb(uid, fp)); return
         answer_callback(cid, t(uid, "hist_gone"), True); return
 
     # ---- library
@@ -2050,7 +2081,7 @@ def startup():
     me = api_post("getMe")
     BOT_USERNAME = me.get("result", {}).get("username", "")
     print("╭──────────────────────────────╮")
-    print("│   SubFinder 2050  (v6)       │")
+    print("│   SubFinder  (v6)       │")
     print("╰──────────────────────────────╯")
     print("Bot cholche: @" + BOT_USERNAME)
     print("Library:", {k: len(v["episodes"]) for k, v in CATALOG.items()})
