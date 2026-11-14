@@ -898,7 +898,9 @@ def merged_search(chat_id, uid, feature):
     ctx["feature"] = feature
     _spin_begin(chat_id, uid)
     results, errors = [], []
-    for name, obj in SOURCE_OBJS.items():
+
+    def _one(item):
+        name, obj = item
         try:
             if feature and isinstance(obj, OpenSubs):
                 subs = obj.search_by_imdb(feature["imdb_id"], languages="bn,en",
@@ -906,16 +908,32 @@ def merged_search(chat_id, uid, feature):
             else:
                 subs = obj.search(ctx["title_q"], languages="bn,en",
                                   season=ctx["season"], episode=ctx["episode"], limit=30)
-            for s in subs:
-                s["src"] = name
-                results.append(s)
+            for s2 in subs:
+                s2["src"] = name
+            return subs, None
         except Exception as e:
-            errors.append(f"{name}: {e}")
+            return [], f"{name}: {e}"
+
+    boxes, threads = {}, []
+    for item in SOURCE_OBJS.items():
+        th = threading.Thread(target=lambda it=item: boxes.__setitem__(it[0], _one(it)), daemon=True)
+        th.start(); threads.append(th)
+    for th in threads:
+        th.join()
+    for name in SOURCE_OBJS:
+        subs, err = boxes.get(name, ([], None))
+        results.extend(subs)
+        if err:
+            errors.append(err)
     results.sort(key=lambda x: x.get("downloads", 0), reverse=True)
     ctx["subs"], ctx["page"] = results, 0
     if not results and errors:
         _spin_end(chat_id, delete=True)
         send_message(chat_id, t(uid, "online_fail", err=esc("; ".join(errors)[:150]))); return
+    if feature is None and results:
+        purl = find_poster(ctx["title_q"], None, "tv" if ctx["season"] else "movie")
+        if purl:
+            send_poster(chat_id, purl, f"🎬 {esc(ctx['title_q'])}")
     _spin_end(chat_id, delete=True)
     show_subs_page(chat_id, uid)
 
@@ -978,6 +996,8 @@ def find_poster(title, year, ftype):
                         break
         except Exception:
             url = None
+    if len(POSTER_CACHE) > 300:
+        POSTER_CACHE.clear()
     POSTER_CACHE[key] = url
     return url
 
@@ -2515,6 +2535,10 @@ def handle_callback(cb):
     # ---- library
     if parts[0] == "show" and len(parts) == 2 and parts[1] in CATALOG:
         answer_callback(cid)
+        _a = CATALOG[parts[1]]
+        _purl = find_poster(_a["title"], _a.get("year"), "tv")
+        if _purl:
+            send_poster(chat_id, _purl, f"🎬 {esc(_a['title'])}")
         send_message(chat_id, anime_text(uid, parts[1]), episode_keyboard(uid, parts[1])); return
     if parts[0] == "ep" and len(parts) == 3 and parts[2].isdigit():
         a, ep = CATALOG.get(parts[1]), int(parts[2])
