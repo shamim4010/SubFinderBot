@@ -609,7 +609,8 @@ def gate_active(feature):
 
 
 def gate_kb(uid):
-    rows = [[{"text": f"📢 {c}", "url": f"https://t.me/{c.lstrip('@')}"}] for c in SETTINGS["channels"]]
+    rows = [[{"text": f"📢 {c}", "url": f"https://t.me/{c.lstrip('@')}"}]
+            for c in SETTINGS["channels"] if str(c).startswith("@")]
     rows.append([B(t(uid, "join_check"), "checkjoin")])
     return {"inline_keyboard": rows}
 
@@ -1465,13 +1466,19 @@ def admin_wizard(chat_id, msg):
         send_message(chat_id, t(c, "a_add_files", title=esc(raw)))
         return True
     if kind == "addchannel":
-        ch = text.replace("https://t.me/", "@").replace("http://t.me/", "@").strip()
-        if not ch.startswith("@"):
-            ch = "@" + ch
+        raw = text.strip()
+        if "t.me/+" in raw or "joinchat" in raw:
+            send_message(chat_id, t(c, "a_ch_invite")); return True
+        if re.fullmatch(r"-?\d{6,}", raw):
+            ch = raw
+        else:
+            ch = raw.replace("https://t.me/", "@").replace("http://t.me/", "@").strip()
+            if not ch.startswith("@"):
+                ch = "@" + ch
         info = api_post("getChat", {"chat_id": ch})
-        ADMIN_FLOW.pop(chat_id, None)
         if not info.get("ok"):
             send_message(chat_id, t(c, "a_ch_bad")); return True
+        ADMIN_FLOW.pop(chat_id, None)
         if ch not in SETTINGS["channels"]:
             SETTINGS["channels"].append(ch); save_settings()
         send_message(chat_id, t(c, "a_ch_ok", ch=esc(ch)) + "\n" + t(c, "a_ch_warn"))
@@ -1833,6 +1840,8 @@ def handle_message(msg):
         UFLOW.pop(uid, None); send_message(chat_id, t(uid, "cancelled")); return
     if cmd == "/lang":
         send_message(chat_id, T("en", "lang_pick"), lang_picker_kb()); return
+    if cmd == "/search":
+        UFLOW[uid] = "search"; send_message(chat_id, t(uid, "ask_name")); return
 
     # ---- pending user flows
     if uid in UFLOW and not cmd:
@@ -1841,6 +1850,8 @@ def handle_message(msg):
             do_redeem(chat_id, uid, text)
         elif kind == "feedback":
             submit_feedback(chat_id, user, text)
+        elif kind == "search":
+            handle_query(chat_id, user, rec, text)
         return
 
     if cmd in USER_VIEWS:
@@ -1870,6 +1881,7 @@ def handle_message(msg):
     act = LABELS.get(text)
     if act:
         if act == "search":
+            UFLOW[uid] = "search"
             send_message(chat_id, t(uid, "ask_name"))
         elif act == "request":
             make_request(chat_id, user)
@@ -1878,7 +1890,7 @@ def handle_message(msg):
              "profile": view_profile, "premium": view_premium, "settings": view_settings}[act](chat_id)
         return
 
-    handle_query(chat_id, user, rec, text)
+    send_message(chat_id, t(uid, "search_hint"), reply_kb(uid))
 
 
 def handle_callback(cb):

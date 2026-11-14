@@ -346,6 +346,16 @@ add("a_ch_ok", "✅ চ্যানেল যোগ হলো: {ch}", "✅ Chann
 add("a_ch_warn", "⚠️ বটকে এই চ্যানেলে <b>অ্যাডমিন</b> বানাতে হবে, নাহলে জয়েন চেক কাজ করবে না।",
     "⚠️ Make the bot an <b>admin</b> of this channel, otherwise join-checks won't work.")
 add("a_ch_bad", "চ্যানেলটি পাওয়া যায়নি। @username ঠিক আছে?", "Channel not found. Is the @username correct?")
+add("a_ch_invite",
+    "❌ <b>Invite link</b> দিয়ে হবে না — জয়েন চেকের জন্য চ্যানেলের <b>@username</b> লাগে।\n"
+    "চ্যানেলের Settings থেকে public username সেট করে সেই @username টা এখানে পাঠাও।\n"
+    "আর বটকে চ্যানেলে <b>অ্যাডমিন</b> বানিয়ে দিও।",
+    "❌ An <b>invite link</b> won't work — the join check needs the channel's <b>@username</b>.\n"
+    "Set a public username in the channel's settings and send that @username here.\n"
+    "Also make the bot an <b>admin</b> in the channel.")
+add("search_hint",
+    "🔍 Search করতে নিচের <b>🔍 Search</b> button চাপ দিয়ে movie/anime এর নাম লিখো",
+    "🔍 To search, tap the <b>🔍 Search</b> button below and type the movie/anime name")
 add("a_cfg",
     "⚙️ <b>বট সেটিংস</b>\n{D}\n📥 ফ্রি ডেইলি লিমিট: <b>{limit}</b>\n🎁 রেফারেল বোনাস: <b>{ref}</b>\n"
     "🛠 মেইনটেন্যান্স: <b>{maint}</b>\n🔒 অনলাইন শুধু প্রিমিয়াম: <b>{onl}</b>\n"
