@@ -476,7 +476,7 @@ def reply_kb(uid):
         [t(uid, "btn_trending"), t(uid, "btn_favs")],
         [t(uid, "btn_profile"), t(uid, "btn_premium")],
         [{"text": t(uid, "btn_request"), "style": "primary"}, t(uid, "btn_settings")]],
-        "resize_keyboard": True, "is_persistent": True}
+        "resize_keyboard": False, "is_persistent": True}
 
 
 LABELS = {}
