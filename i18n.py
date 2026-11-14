@@ -219,6 +219,8 @@ add("req_w_ep", "🔢 সিজন ও এপিসোড লেখো — য�
 add("req_w_confirm", "📩 <b>রিকুয়েস্ট চেক করো</b>\n\n🎞 Title: <b>{title}</b>\n📌 Type: {type}\n🌐 Subtitle: {lang}\n📦 Scope: {scope}\n🔗 Link: {link}\n\nসব ঠিক থাকলে <b>Confirm</b> চাপো 👇",
     "📩 <b>Check your request</b>\n\n🎞 Title: <b>{title}</b>\n📌 Type: {type}\n🌐 Subtitle: {lang}\n📦 Scope: {scope}\n🔗 Link: {link}\n\nIf everything looks right, tap <b>Confirm</b> 👇")
 add("req_cancelled", "❌ রিকুয়েস্ট বাতিল করা হয়েছে।", "❌ Request cancelled.")
+add("req_choose", "📩 রিকুয়েস্ট করার দুইটা উপায় আছে 👇\n\n📝 <b>Web Form</b> — প্রিমিয়াম ফর্মে সব একবারে পূরণ করো\n⌨️ <b>Step-by-step</b> — বাটনে বাটনে ধাপে ধাপে",
+    "📩 Two ways to request 👇\n\n📝 <b>Web Form</b> — fill everything at once in a premium form\n⌨️ <b>Step-by-step</b> — go button by button")
 add("req_w_edit", "✏️ সঠিক নামটা টাইপ করে পাঠাও 👇\nআগের নাম: <b>{title}</b>",
     "✏️ Type the correct name 👇\nCurrent name: <b>{title}</b>")
 add("a_req_new2", "📩 <b>নতুন রিকুয়েস্ট</b>: {q}\n📌 {type} · 🌐 {lang} · 📦 {scope}\n🔗 {link}\n👤 {name} (<code>{uid}</code>)",

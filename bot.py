@@ -932,12 +932,121 @@ def pending_reqs():
     return [r for r in REQS if r.get("status") == "pending"]
 
 
+FORM_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SubFinder — Request a Subtitle</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: linear-gradient(160deg, #0a0f1e, #0d1830 60%, #081120); color: #eef2ff; min-height: 100vh; padding: 18px 14px 30px; }
+  .card { max-width: 430px; margin: 0 auto; background: rgba(255,255,255,.045); border: 1px solid rgba(244,197,66,.35); border-radius: 18px; padding: 20px 16px 22px; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+  h1 { font-size: 20px; text-align: center; background: linear-gradient(90deg, #f4c542, #ffd970, #f4c542); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .4px; }
+  .sub { text-align: center; color: #9fb4d8; font-size: 12.5px; margin: 4px 0 16px; }
+  label { display: block; font-size: 12px; font-weight: 700; color: #7fe7dc; letter-spacing: .6px; text-transform: uppercase; margin: 14px 0 6px; }
+  input[type=text] { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.35); color: #fff; font-size: 15px; outline: none; }
+  input[type=text]:focus { border-color: #f4c542; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { flex: 1; min-width: 30%; text-align: center; padding: 10px 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.3); font-size: 14px; cursor: pointer; user-select: none; }
+  .chip.on { border-color: #f4c542; background: rgba(244,197,66,.16); color: #ffd970; font-weight: 700; }
+  #epRow { display: none; }
+  button { width: 100%; margin-top: 20px; padding: 13px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; color: #231a02; background: linear-gradient(90deg, #f4c542, #ffdf7e); cursor: pointer; box-shadow: 0 6px 18px rgba(244,197,66,.35); }
+  .err { color: #ff8a8a; font-size: 13px; min-height: 16px; margin-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📩 Request a Subtitle</h1>
+  <div class="sub">SubFinder · fill the form, we will find it for you</div>
+  <label>🎞 Full title</label>
+  <input type="text" id="title" placeholder="e.g. The Eminence in Shadow">
+  <label>📌 Type</label>
+  <div class="chips" id="typeChips">
+    <div class="chip" data-v="movie">🎬 Movie</div>
+    <div class="chip on" data-v="anime">📺 Anime</div>
+    <div class="chip" data-v="drama">🎭 Drama</div>
+  </div>
+  <label>🔗 Link (IMDb / MyAnimeList / TMDB)</label>
+  <input type="text" id="link" placeholder="https://... (optional)">
+  <label>🌐 Subtitle language</label>
+  <div class="chips" id="langChips">
+    <div class="chip on" data-v="bn">🇧🇩 Bangla</div>
+    <div class="chip" data-v="en">🇬🇧 English</div>
+    <div class="chip" data-v="both">🌐 Both</div>
+  </div>
+  <div id="scopeBox">
+    <label>📦 Scope</label>
+    <div class="chips" id="scopeChips">
+      <div class="chip on" data-v="full">📦 Full Season</div>
+      <div class="chip" data-v="ep">🔢 One Episode</div>
+    </div>
+    <div id="epRow">
+      <label>🔢 Season &amp; episode</label>
+      <input type="text" id="ep" placeholder="e.g. S1 E5">
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <button id="send">✅ Send Request</button>
+</div>
+<script>
+  var tg = window.Telegram.WebApp; tg.ready(); tg.expand();
+  var qs = new URLSearchParams(location.search);
+  if (qs.get("t")) document.getElementById("title").value = qs.get("t");
+  function chips(id, cb) {
+    var box = document.getElementById(id), val = box.querySelector(".on").dataset.v;
+    box.addEventListener("click", function(e) {
+      var c = e.target.closest(".chip"); if (!c) return;
+      box.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("on"); });
+      c.classList.add("on"); val = c.dataset.v; if (cb) cb(val);
+    });
+    return function(){ return val; };
+  }
+  var getType = chips("typeChips", function(v){
+    document.getElementById("scopeBox").style.display = (v === "movie") ? "none" : "block";
+  });
+  var getLang = chips("langChips");
+  var getScope = chips("scopeChips", function(v){
+    document.getElementById("epRow").style.display = (v === "ep") ? "block" : "none";
+  });
+  document.getElementById("send").addEventListener("click", function(){
+    var title = document.getElementById("title").value.trim();
+    if (!title) { document.getElementById("err").textContent = "Please type the full title first."; return; }
+    var type = getType(), scope = "Full Season";
+    if (type === "movie") scope = "Full movie";
+    else if (getScope() === "ep") scope = document.getElementById("ep").value.trim() || "Specific episode";
+    tg.sendData(JSON.stringify({ title: title, type: type,
+      link: document.getElementById("link").value.trim(), lang: getLang(), scope: scope }));
+    tg.close();
+  });
+</script>
+</body>
+</html>"""
+
+
 REQFLOW = {}
 REQ_TYPES = {"movie": "🎬 Movie", "anime": "📺 Anime", "drama": "🎭 Drama"}
 REQ_LANGS = {"bn": "🇧🇩 Bangla", "en": "🇬🇧 English", "both": "🌐 Bangla + English"}
 
 
 def make_request(chat_id, user):
+    """Request entry: Render a thakle premium web form er option, na hole soja wizard."""
+    import urllib.parse
+    uid = user["id"]
+    base = os.environ.get("WEBHOOK_BASE") or os.environ.get("RENDER_EXTERNAL_URL")
+    if base:
+        q = LAST_QUERY.get(chat_id)
+        url = base.rstrip("/") + "/form" + (("?t=" + urllib.parse.quote(q)) if q else "")
+        markup = {"inline_keyboard": [[{"text": "📝 Open Request Form", "web_app": {"url": url}}],
+                                      [{"text": "⌨️ Step-by-step", "callback_data": "rqwiz"},
+                                       {"text": "❌ Cancel", "callback_data": "rqx"}]]}
+        send_message(chat_id, t(uid, "req_choose"), markup)
+        return
+    start_req_wizard(chat_id, user)
+
+
+def start_req_wizard(chat_id, user):
     """Advanced request wizard: title -> type -> link -> language -> scope -> confirm.
     Search theke asle title auto boshe (LAST_QUERY)."""
     uid = user["id"]
@@ -1021,12 +1130,24 @@ def reqflow_title_edit(chat_id, user, text):
     reqflow_confirm(chat_id, uid)
 
 
-def reqflow_save(chat_id, user):
+def _req_reply(chat_id, mid, text):
+    """mid thakle oi message tai edit kore button sariye dey, na hole notun message."""
+    if mid:
+        try:
+            r = edit_message(chat_id, mid, text, {"inline_keyboard": []})
+            if r and r.get("ok"):
+                return
+        except Exception:
+            pass
+    send_message(chat_id, text)
+
+
+def reqflow_save(chat_id, user, mid=None):
     uid = user["id"]
     f = REQFLOW.pop(uid, None) or {}
     title = f.get("title") or LAST_QUERY.get(chat_id) or ""
     if any(r["uid"] == uid and norm(r["q"]) == norm(title) and r["status"] == "pending" for r in REQS):
-        send_message(chat_id, t(uid, "req_dup")); return
+        _req_reply(chat_id, mid, t(uid, "req_dup")); return
     with LOCK:
         rid = max([r["id"] for r in REQS] + [0]) + 1
         REQS.append({"id": rid, "uid": uid, "name": user.get("first_name", ""), "q": title,
@@ -1034,7 +1155,7 @@ def reqflow_save(chat_id, user):
                      "lang": f.get("lang", ""), "scope": f.get("scope", ""),
                      "ts": time.strftime("%Y-%m-%d %H:%M"), "status": "pending"})
         mark("reqs")
-    send_message(chat_id, t(uid, "req_ok"))
+    _req_reply(chat_id, mid, t(uid, "req_ok"))
     for aid in admin_ids():
         send_message(aid, T(ulang(aid), "a_req_new2", q=esc(title), name=esc(user.get("first_name", "")), uid=uid,
                             type=REQ_TYPES.get(f.get("type"), "-"), lang=REQ_LANGS.get(f.get("lang"), "-"),
@@ -1961,6 +2082,26 @@ def handle_message(msg):
     elif msg.get("document"):
         send_message(chat_id, t(uid, "no_file_upload")); return
 
+    wad = msg.get("web_app_data")
+    if wad:
+        if gate_blocked(uid):
+            show_gate(chat_id, uid); return
+        try:
+            fd = json.loads(wad.get("data") or "{}")
+        except Exception:
+            fd = {}
+        title = (fd.get("title") or "").strip()[:120]
+        if title:
+            rtype = fd.get("type") if fd.get("type") in REQ_TYPES else "anime"
+            REQFLOW[uid] = {"uid": uid, "title": title, "type": rtype,
+                            "link": (fd.get("link") or "").strip()[:300],
+                            "lang": fd.get("lang") if fd.get("lang") in REQ_LANGS else "bn",
+                            "scope": "Full movie" if rtype == "movie" else (fd.get("scope") or "Full Season").strip()[:40]}
+            reqflow_save(chat_id, user)
+        else:
+            send_message(chat_id, t(uid, "req_need"))
+        return
+
     if not text:
         return
 
@@ -2185,7 +2326,16 @@ def handle_callback(cb):
         return
     if data == "rqx":
         REQFLOW.pop(uid, None); UFLOW.pop(uid, None)
-        answer_callback(cid); send_message(chat_id, t(uid, "req_cancelled")); return
+        answer_callback(cid)
+        try:
+            r = edit_message(chat_id, mid, t(uid, "req_cancelled"), {"inline_keyboard": []})
+            if not (r and r.get("ok")):
+                raise ValueError("edit failed")
+        except Exception:
+            send_message(chat_id, t(uid, "req_cancelled"))
+        return
+    if data == "rqwiz":
+        answer_callback(cid); start_req_wizard(chat_id, user); return
     if data == "rqedit":
         f = REQFLOW.get(uid) or {}
         UFLOW[uid] = "req_title_edit"
@@ -2210,7 +2360,7 @@ def handle_callback(cb):
             send_message(chat_id, t(uid, "req_w_ep"), kb([B("❌ Cancel", "rqx")]))
         return
     if data == "rqok":
-        answer_callback(cid); reqflow_save(chat_id, user); return
+        answer_callback(cid); reqflow_save(chat_id, user, mid); return
     if data == "req":
         answer_callback(cid); make_request(chat_id, user); return
     if parts[0] == "feat" and chat_id in CTX:
@@ -2343,6 +2493,12 @@ def run_webhook(pool, base):
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
+            if self.path.startswith("/form"):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(FORM_HTML.encode())
+                return
             self.send_response(200)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.end_headers()
