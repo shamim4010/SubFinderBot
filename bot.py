@@ -945,17 +945,22 @@ def find_poster(title, year, ftype):
         return POSTER_CACHE[key]
     url = None
     try:
-        media = "tvShow" if ftype == "tv" else "movie"
         r = requests.get("https://itunes.apple.com/search",
-                         params={"term": title, "media": media, "limit": 5}, timeout=4)
+                         params={"term": title, "limit": 8}, timeout=4)
         items = [it for it in r.json().get("results", []) if it.get("artworkUrl100")]
-        pick = None
-        for it in items:
-            if year and str(year) in str(it.get("releaseDate", "")):
-                pick = it; break
-        if not pick and items:
-            pick = items[0]
-        if pick:
+
+        def pscore(it):
+            k = it.get("kind") or ""
+            want = 0
+            if ftype == "movie" and k == "feature-movie":
+                want = 2
+            elif ftype == "tv" and (k == "tv-episode" or it.get("collectionType") == "TV Season"):
+                want = 2
+            y = 1 if year and str(year) in str(it.get("releaseDate", "") or it.get("collectionReleaseDate", "")) else 0
+            return (want, y)
+
+        if items:
+            pick = max(items, key=pscore)
             url = pick["artworkUrl100"].replace("100x100bb.jpg", "600x600bb.jpg")
     except Exception:
         url = None
