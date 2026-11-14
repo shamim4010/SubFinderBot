@@ -1016,9 +1016,20 @@ FORM_HTML = """<!DOCTYPE html>
     var type = getType(), scope = "Full Season";
     if (type === "movie") scope = "Full movie";
     else if (getScope() === "ep") scope = document.getElementById("ep").value.trim() || "Specific episode";
-    tg.sendData(JSON.stringify({ title: title, type: type,
-      link: document.getElementById("link").value.trim(), lang: getLang(), scope: scope }));
-    tg.close();
+    var form = { title: title, type: type,
+      link: document.getElementById("link").value.trim(), lang: getLang(), scope: scope };
+    fetch("/form-submit", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: tg.initData || "", form: form }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (j && j.ok) {
+          document.querySelector(".card").innerHTML = "<h1>&#9989; Request sent!</h1><div class='sub'>We will notify you when the subtitle is added</div>";
+          setTimeout(function(){ tg.close(); }, 1200);
+        } else {
+          document.getElementById("err").textContent = "Could not send. Please try the step-by-step option.";
+        }
+      })
+      .catch(function(){ document.getElementById("err").textContent = "Network error. Please try again."; });
   });
 </script>
 </body>
@@ -2544,6 +2555,51 @@ def main():
         flush()
 
 
+def _valid_init_data(init_data, token):
+    """Telegram WebApp initData verify (HMAC) — sotto user hole tar user dict, na hole None."""
+    import hashlib, hmac, urllib.parse
+    try:
+        pairs = dict(urllib.parse.parse_qsl(init_data, keep_blank_values=True))
+        got = pairs.pop("hash", "")
+        if not got:
+            return None
+        dcs = "\n".join(f"{k}={pairs[k]}" for k in sorted(pairs))
+        secret = hmac.new(b"WebAppData", token.encode(), hashlib.sha256).digest()
+        calc = hmac.new(secret, dcs.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calc, got):
+            return None
+        user = json.loads(pairs.get("user") or "{}")
+        return user if user.get("id") else None
+    except Exception:
+        return None
+
+
+def handle_form_submit(payload):
+    """Web form submit: initData diye user verify kore request save kore + notify."""
+    user = _valid_init_data((payload or {}).get("initData") or "", TOKEN)
+    if not user:
+        return False
+    fd = (payload or {}).get("form") or {}
+    title = (fd.get("title") or "").strip()[:120]
+    if not title:
+        return False
+    uid = int(user["id"])
+    rec, _new = touch_user({"id": uid, "first_name": user.get("first_name", ""),
+                            "username": user.get("username", "")})
+    if rec.get("banned"):
+        return False
+    if gate_blocked(uid):
+        show_gate(uid, uid)
+        return False
+    rtype = fd.get("type") if fd.get("type") in REQ_TYPES else "anime"
+    REQFLOW[uid] = {"uid": uid, "title": title, "type": rtype,
+                    "link": (fd.get("link") or "").strip()[:300],
+                    "lang": fd.get("lang") if fd.get("lang") in REQ_LANGS else "bn",
+                    "scope": "Full movie" if rtype == "movie" else (fd.get("scope") or "Full Season").strip()[:40]}
+    reqflow_save(uid, {"id": uid, "first_name": user.get("first_name", "")})
+    return True
+
+
 def run_webhook(pool, base):
     import hashlib
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -2568,6 +2624,19 @@ def run_webhook(pool, base):
             self.wfile.write("SubFinder is alive".encode())
 
         def do_POST(self):
+            if self.path == "/form-submit":
+                ok = False
+                try:
+                    n = int(self.headers.get("Content-Length", 0))
+                    payload = json.loads(self.rfile.read(n) or b"{}")
+                    ok = handle_form_submit(payload)
+                except Exception as e:
+                    print("form submit error:", e)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"ok": ok}).encode())
+                return
             if self.path != hook_path:
                 self.send_response(404)
                 self.end_headers()
