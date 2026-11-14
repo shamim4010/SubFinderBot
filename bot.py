@@ -1865,7 +1865,9 @@ def handle_message(msg):
         UFLOW[uid] = "search"; send_message(chat_id, t(uid, "ask_name")); return
 
     # ---- pending user flows
-    if uid in UFLOW and not cmd:
+    if text in LABELS:
+        UFLOW.pop(uid, None)
+    if uid in UFLOW and not cmd and text not in LABELS:
         kind = UFLOW.pop(uid)
         if kind == "redeem":
             do_redeem(chat_id, uid, text)
