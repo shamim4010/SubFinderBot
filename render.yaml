@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: subfinder-bot
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 bot.py
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+      - key: OS_API_KEY
+        sync: false
+      - key: OS_USERNAME
+        sync: false
+      - key: OS_PASSWORD
+        sync: false
