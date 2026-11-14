@@ -488,10 +488,10 @@ for _lg in LANGS:
 
 
 def main_menu_kb(uid):
-    return kb([B(t(uid, "btn_library"), "mn:library"), B(t(uid, "btn_trending"), "mn:trending")],
-              [B(t(uid, "btn_favs"), "mn:favs"), B(t(uid, "btn_history"), "mn:history")],
-              [B(t(uid, "btn_profile"), "mn:profile"), B(t(uid, "btn_invite"), "mn:invite")],
-              [B(t(uid, "btn_premium"), "mn:premium", "primary"), B(t(uid, "btn_settings"), "mn:settings")],
+    return kb([B(t(uid, "btn_library"), "mn:library", "primary"), B(t(uid, "btn_trending"), "mn:trending", "primary")],
+              [B(t(uid, "btn_favs"), "mn:favs", "primary"), B(t(uid, "btn_history"), "mn:history", "primary")],
+              [B(t(uid, "btn_profile"), "mn:profile", "primary"), B(t(uid, "btn_invite"), "mn:invite", "primary")],
+              [B(t(uid, "btn_premium"), "mn:premium", "success"), B(t(uid, "btn_settings"), "mn:settings", "primary")],
               [B(t(uid, "btn_help"), "mn:help")])
 
 
