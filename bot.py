@@ -941,18 +941,32 @@ FORM_HTML = """<!DOCTYPE html>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: linear-gradient(160deg, #0a0f1e, #0d1830 60%, #081120); color: #eef2ff; min-height: 100vh; padding: 18px 14px 30px; }
-  .card { max-width: 430px; margin: 0 auto; background: rgba(255,255,255,.045); border: 1px solid rgba(244,197,66,.35); border-radius: 18px; padding: 20px 16px 22px; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: linear-gradient(160deg, #0a0f1e, #0d1830 60%, #081120); background-size: 220% 220%; animation: bgmove 16s ease infinite; color: #eef2ff; min-height: 100vh; padding: 18px 14px 30px; }
+  @keyframes bgmove { 0%,100% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } }
+  .card { max-width: 430px; margin: 0 auto; background: rgba(255,255,255,.045); border: 1px solid rgba(244,197,66,.35); border-radius: 18px; padding: 20px 16px 22px; box-shadow: 0 12px 40px rgba(0,0,0,.45); animation: rise .45s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
   h1 { font-size: 20px; text-align: center; background: linear-gradient(90deg, #f4c542, #ffd970, #f4c542); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: .4px; }
   .sub { text-align: center; color: #9fb4d8; font-size: 12.5px; margin: 4px 0 16px; }
   label { display: block; font-size: 12px; font-weight: 700; color: #7fe7dc; letter-spacing: .6px; text-transform: uppercase; margin: 14px 0 6px; }
   input[type=text] { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.35); color: #fff; font-size: 15px; outline: none; }
-  input[type=text]:focus { border-color: #f4c542; }
+  input[type=text] { transition: border-color .2s ease, box-shadow .2s ease; }
+  input[type=text]:focus { border-color: #f4c542; box-shadow: 0 0 0 3px rgba(244,197,66,.18); }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-  .chip { flex: 1; min-width: 30%; text-align: center; padding: 10px 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.3); font-size: 14px; cursor: pointer; user-select: none; }
-  .chip.on { border-color: #f4c542; background: rgba(244,197,66,.16); color: #ffd970; font-weight: 700; }
+  .chip { flex: 1; min-width: 30%; text-align: center; padding: 10px 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.3); font-size: 14px; cursor: pointer; user-select: none; transition: all .18s ease; -webkit-tap-highlight-color: transparent; }
+  .chip:active { transform: scale(.92); }
+  .chip.on { border-color: #f4c542; background: rgba(244,197,66,.16); color: #ffd970; font-weight: 700; animation: pop .28s cubic-bezier(.2,.9,.3,1.5); box-shadow: 0 4px 14px rgba(244,197,66,.25); }
+  @keyframes pop { 0% { transform: scale(.9); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
   #epRow { display: none; }
-  button { width: 100%; margin-top: 20px; padding: 13px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; color: #231a02; background: linear-gradient(90deg, #f4c542, #ffdf7e); cursor: pointer; box-shadow: 0 6px 18px rgba(244,197,66,.35); }
+  button { width: 100%; margin-top: 20px; padding: 13px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; color: #231a02; background: linear-gradient(90deg, #f4c542, #ffdf7e); cursor: pointer; box-shadow: 0 6px 18px rgba(244,197,66,.35); transition: transform .12s ease, opacity .2s ease; -webkit-tap-highlight-color: transparent; }
+  button:active { transform: scale(.96); }
+  button:disabled { opacity: .75; cursor: wait; }
+  .spin { display: inline-block; width: 15px; height: 15px; border: 2.5px solid rgba(35,26,2,.3); border-top-color: #231a02; border-radius: 50%; vertical-align: -2px; margin-right: 8px; animation: sp .7s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+  .okwrap { text-align: center; padding: 26px 0 10px; animation: rise .4s ease both; }
+  .okcheck { width: 84px; height: 84px; }
+  .okcheck circle { fill: none; stroke: #f4c542; stroke-width: 2.5; stroke-dasharray: 151; stroke-dashoffset: 151; animation: draw .6s ease forwards; }
+  .okcheck path { fill: none; stroke: #7fe7dc; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw .45s .5s ease forwards; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
   .err { color: #ff8a8a; font-size: 13px; min-height: 16px; margin-top: 8px; text-align: center; }
 </style>
 </head>
@@ -1018,18 +1032,21 @@ FORM_HTML = """<!DOCTYPE html>
     else if (getScope() === "ep") scope = document.getElementById("ep").value.trim() || "Specific episode";
     var form = { title: title, type: type,
       link: document.getElementById("link").value.trim(), lang: getLang(), scope: scope };
+    var btn = document.getElementById("send");
+    btn.disabled = true; btn.innerHTML = "<span class='spin'></span>Sending...";
     fetch("/form-submit", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ initData: tg.initData || "", form: form }) })
       .then(function(r){ return r.json(); })
       .then(function(j){
         if (j && j.ok) {
-          document.querySelector(".card").innerHTML = "<h1>&#9989; Request sent!</h1><div class='sub'>We will notify you when the subtitle is added</div>";
-          setTimeout(function(){ tg.close(); }, 1200);
+          document.querySelector(".card").innerHTML = "<div class='okwrap'><svg class='okcheck' viewBox='0 0 52 52'><circle cx='26' cy='26' r='24'/><path d='M14 27l8 8 16-16'/></svg><h1>Request sent!</h1><div class='sub'>We will notify you when the subtitle is added</div></div>";
+          setTimeout(function(){ tg.close(); }, 2100);
         } else {
+          btn.disabled = false; btn.textContent = "✅ Send Request";
           document.getElementById("err").textContent = "Could not send. Please try the step-by-step option.";
         }
       })
-      .catch(function(){ document.getElementById("err").textContent = "Network error. Please try again."; });
+      .catch(function(){ btn.disabled = false; btn.textContent = "✅ Send Request"; document.getElementById("err").textContent = "Network error. Please try again."; });
   });
 </script>
 </body>
