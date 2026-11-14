@@ -10,7 +10,7 @@ Season pack (full-pack.zip) repo te rakha hoy nai — bot start holei episode fi
 ## Step 2: Render service
 1. **render.com** a jao → **Get Started / Sign In** → GitHub diye login koro
 2. **New +** → **Web Service** → **Public Git Repository** beche nao
-3. Tomar repo er link bosao: `https://github.com/shamim4010/subfinder-bot` → Continue
+3. Tomar repo er link bosao: `https://github.com/shamim4010/SubFinderBot` → Continue
 4. Settings:
    - Name: `subfinder-bot`
    - Build Command: `pip install -r requirements.txt`
