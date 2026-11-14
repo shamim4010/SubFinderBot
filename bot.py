@@ -110,6 +110,28 @@ def _env_bootstrap():
                         "api_key": os.environ["OS_API_KEY"],
                         "username": os.environ.get("OS_USERNAME", ""),
                         "password": os.environ.get("OS_PASSWORD", ""), "enabled": True}]})
+        # Gate channel + SubDL o env theke seed hoy, jeno redeploy holeo muche na jay
+        _gate_ch = [c.strip() for c in os.environ.get("GATE_CHANNELS", "").split(",") if c.strip()]
+        _gate_on = os.environ.get("JOIN_GATE", "").strip().lower() in ("1", "true", "yes", "on")
+        _subdl = os.environ.get("SUBDL_API_KEY", "").strip()
+        if _gate_ch or _gate_on or _subdl:
+            _st = {}
+            if os.path.exists(SETTINGS_FILE):
+                try:
+                    _st = json.load(io.open(SETTINGS_FILE, encoding="utf-8")) or {}
+                except Exception:
+                    _st = {}
+            _changed = False
+            if _gate_ch and not _st.get("channels"):
+                _st["channels"] = _gate_ch; _changed = True
+            if _gate_on and not _st.get("join_gate"):
+                _st["join_gate"] = True; _changed = True
+            if _subdl and not any(s2.get("type") == "subdl" for s2 in _st.get("sources", [])):
+                _st.setdefault("sources", []).append(
+                    {"name": "SubDL", "type": "subdl", "api_key": _subdl, "enabled": True})
+                _changed = True
+            if _changed:
+                save_json(SETTINGS_FILE, _st)
         lib = os.path.join(BASE, "library.zip")
         if os.path.exists(lib) and not os.path.isdir(os.path.join(BASE, "data")):
             import zipfile
