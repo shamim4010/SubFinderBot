@@ -412,15 +412,16 @@ add("search_hint",
     "🔍 To search, tap the <b>🔍 Search</b> button below and type the movie/anime name")
 add("a_cfg",
     "⚙️ <b>বট সেটিংস</b>\n{D}\n📥 ফ্রি ডেইলি লিমিট: <b>{limit}</b>\n🎁 রেফারেল বোনাস: <b>{ref}</b>\n"
-    "🛠 মেইনটেন্যান্স: <b>{maint}</b>\n🔒 অনলাইন শুধু প্রিমিয়াম: <b>{onl}</b>\n"
+    "🛠 মেইনটেন্যান্স: <b>{maint}</b>\n🔒 অনলাইন শুধু প্রিমিয়াম: <b>{onl}</b>\n📦 ফুল প্যাক শুধু প্রিমিয়াম: <b>{zip}</b>\n"
     "🚪 জয়েন গেট: <b>{gate}</b>\n🔐 গেট লেভেল: <b>{glevel}</b>",
     "⚙️ <b>Bot Settings</b>\n{D}\n📥 Free daily limit: <b>{limit}</b>\n🎁 Referral bonus: <b>{ref}</b>\n"
-    "🛠 Maintenance: <b>{maint}</b>\n🔒 Online = Premium only: <b>{onl}</b>\n"
+    "🛠 Maintenance: <b>{maint}</b>\n🔒 Online = Premium only: <b>{onl}</b>\n📦 Full pack = Premium only: <b>{zip}</b>\n"
     "🚪 Join gate: <b>{gate}</b>\n🔐 Gate level: <b>{glevel}</b>")
 add("a_cfg_limit", "📥 ডেইলি লিমিট বদলান", "📥 Set daily limit")
 add("a_cfg_ref", "🎁 রেফারেল বোনাস বদলান", "🎁 Set referral bonus")
 add("a_cfg_maint", "🛠 মেইনটেন্যান্স টগল", "🛠 Toggle maintenance")
 add("a_cfg_onl", "🔒 অনলাইন প্রিমিয়াম-অনলি টগল", "🔒 Toggle online premium-only")
+add("a_cfg_zip", "📦 ফুল প্যাক প্রিমিয়াম-অনলি টগল", "📦 Toggle full-pack premium-only")
 add("a_cfg_gate", "🚪 জয়েন গেট টগল", "🚪 Toggle join gate")
 add("a_cfg_glevel", "🔐 গেট লেভেল টগল", "🔐 Toggle gate level")
 add("a_cfg_num", "নতুন মান পাঠান (সংখ্যা, 0 = আনলিমিটেড/নেই):", "Send the new value (number, 0 = unlimited/none):")

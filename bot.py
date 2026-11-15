@@ -171,7 +171,7 @@ SESSION = requests.Session()
 DEFAULT_SETTINGS = {
     "join_gate": True, "gate_all_downloads": True, "channels": ["@animesub_bd"], "sources": [],
     "admins": [], "daily_limit": 10, "referral_bonus": 3,
-    "maintenance": False, "online_premium_only": False, "codes": {},
+    "maintenance": False, "online_premium_only": False, "zip_premium_only": True, "codes": {},
     "plans": [], "premium_contact": "", "daily_bonus": 1,
 }
 SETTINGS = {**DEFAULT_SETTINGS, **load_json(SETTINGS_FILE, {})}
@@ -747,6 +747,9 @@ def require_access(chat_id, uid, feature="file", pending=None):
     if has_perks(uid) or is_admin(uid):
         return True
     if feature == "online" and SETTINGS.get("online_premium_only"):
+        send_message(chat_id, t(uid, "premium_locked"), kb([B("⭐ Premium", "mn:premium", "primary")]))
+        return False
+    if feature == "zip" and SETTINGS.get("zip_premium_only", True):
         send_message(chat_id, t(uid, "premium_locked"), kb([B("⭐ Premium", "mn:premium", "primary")]))
         return False
     if gate_active(feature) and joined_all(uid, fresh=True) is False:
@@ -2118,12 +2121,14 @@ def view_cfg(chat_id, mid=None):
     c = chat_id
     text = t(c, "a_cfg", limit=SETTINGS["daily_limit"] or "♾", ref=SETTINGS["referral_bonus"],
              maint=onoff(SETTINGS["maintenance"]), onl=onoff(SETTINGS["online_premium_only"]),
+             zip=onoff(SETTINGS.get("zip_premium_only", True)),
              gate=onoff(SETTINGS["join_gate"]),
              glevel=t(c, "a_gl_all" if SETTINGS["gate_all_downloads"] else "a_gl_prem"))
     show(chat_id, text, kb([B(t(c, "a_cfg_limit"), "adm:cfgn:daily_limit"),
                             B(t(c, "a_cfg_ref"), "adm:cfgn:referral_bonus")],
                            [B(t(c, "a_cfg_maint"), "adm:cfgt:maintenance")],
                            [B(t(c, "a_cfg_onl"), "adm:cfgt:online_premium_only")],
+                           [B(t(c, "a_cfg_zip"), "adm:cfgt:zip_premium_only")],
                            [B(t(c, "a_cfg_gate"), "adm:cfgt:join_gate")],
                            [B(t(c, "a_cfg_glevel"), "adm:cfgt:gate_all_downloads")],
                            back_row(c)), mid)
@@ -2652,7 +2657,7 @@ def admin_callback(cb, parts):
         save_settings(); view_channels(c, mid)
     elif act == "cfg":
         view_cfg(c, mid)
-    elif act == "cfgt" and arg in ("maintenance", "online_premium_only", "join_gate", "gate_all_downloads"):
+    elif act == "cfgt" and arg in ("maintenance", "online_premium_only", "zip_premium_only", "join_gate", "gate_all_downloads"):
         SETTINGS[arg] = not SETTINGS[arg]; save_settings(); view_cfg(c, mid)
     elif act == "cfgn" and arg in ("daily_limit", "referral_bonus"):
         start_flow(c, "setnum", "x", "a_cfg_num", {"key": arg})
