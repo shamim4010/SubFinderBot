@@ -1,8 +1,16 @@
-# SubFinder 2050 (v6) — Bangla + English Subtitle Bot
+# SubFinder 2050 (v7) — Bangla + English Subtitle Bot
 
 Telegram bot: movie/anime er nam likhle library + online (OpenSubtitles, SubDL) theke subtitle khuje pathay.
 
-## Notun ki ki (v6)
+## Notun ki ki (v7)
+- 💾 **MongoDB persistence** — `MONGODB_URI` dile users, premium, settings, codes, stats, requests, ar admin er add kora subtitle file Render restart/redeploy-e r muchbe na (Atlas free cluster-i jothesto). Na dile age-r moto local file.
+- ⭐ **Premium card upgrade** — Free vs Premium compare, plans list, days-left, "Get Premium" contact button, Daily bonus/Invite shortcut
+- 🎁 `/daily` (roj bonus download, 7-din streak e +3) · 📥 `/quota` (aj-ker limit bar) · `/search naruto` (direct) · `/request`
+- ⏳ Premium sesh hobar 3 din age auto reminder + sesh hole notice
+- 🛠 **Admin notun command**: `/revoke` `/addbonus` `/msg` `/find` `/premiumlist` `/expiring` `/codes` `/delcode` `/plans` `/addplan Name | DAYS | Price` `/delplan` `/setcontact @user` `/setdaily N` `/gencode DAYS COUNT USES` `/adminhelp`
+- 🧹 **Clean tool** — HTML tag, [sound effect], ♪ music, ad/credit line muche renumber kore.
+
+## v6 feature gula
 **User**
 - 🌐 Bhasha system: বাংলা / English (/lang, /start a choose, menu-o bodlano jay)
 - 🔎 Smart search: typo-tolerant ("code gaess" → Code Geass), S2E12 / ep 5 / Bangla alias

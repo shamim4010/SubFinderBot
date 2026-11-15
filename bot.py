@@ -43,6 +43,7 @@ from i18n import ADD_RANKS, LANGS, T  # noqa: E402
 from opensubs import OpenSubs  # noqa: E402
 from subdl import SubDL  # noqa: E402
 import subtools  # noqa: E402
+import persist  # noqa: E402
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "data")
@@ -79,6 +80,7 @@ def save_json(path, obj):
                 with open(tmp, "w", encoding="utf-8") as f:
                     json.dump(obj, f, ensure_ascii=False, indent=1)
                 os.replace(tmp, path)
+            persist.mark(path)
             return
         except RuntimeError:      # dict changed size during iteration
             time.sleep(0.05)
@@ -158,6 +160,8 @@ def _env_bootstrap():
         print("env bootstrap error:", e)
 
 
+persist.init()
+persist.restore_all(BASE)
 _env_bootstrap()
 CFG = load_json(CONFIG_FILE, {})
 ADMIN_ID = CFG.get("admin_id")
@@ -168,6 +172,7 @@ DEFAULT_SETTINGS = {
     "join_gate": True, "gate_all_downloads": True, "channels": ["@animesub_bd"], "sources": [],
     "admins": [], "daily_limit": 10, "referral_bonus": 3,
     "maintenance": False, "online_premium_only": False, "codes": {},
+    "plans": [], "premium_contact": "", "daily_bonus": 1,
 }
 SETTINGS = {**DEFAULT_SETTINGS, **load_json(SETTINGS_FILE, {})}
 
@@ -777,7 +782,8 @@ def tools_kb(uid, path):
     return kb([B("◀◀ -5s", f"tl:{tok}:m5"), B("◀ -1s", f"tl:{tok}:m1"),
                B("+1s ▶", f"tl:{tok}:p1"), B("+5s ▶▶", f"tl:{tok}:p5")],
               [B("-0.5s", f"tl:{tok}:m05"), B("+0.5s", f"tl:{tok}:p05"),
-               B(t(uid, "tool_vtt"), f"tl:{tok}:vtt")])
+               B(t(uid, "tool_vtt"), f"tl:{tok}:vtt"),
+               B(t(uid, "tool_clean"), f"tl:{tok}:clean")])
 
 
 def remember(rec, title, path):
@@ -1673,22 +1679,101 @@ def view_profile(chat_id, mid=None):
                            home_row(chat_id)), mid)
 
 
+def days_left(rec):
+    until = rec.get("premium_until", 0)
+    return max(1, int((until - time.time()) // 86400) + 1) if until > time.time() else 0
+
+
+def contact_url():
+    c = (SETTINGS.get("premium_contact") or "").strip()
+    if not c:
+        return ""
+    return c if c.startswith("http") else "https://t.me/" + c.lstrip("@")
+
+
 def view_premium(chat_id, mid=None):
     uid = chat_id
+    rec = USERS[str(uid)]
     gate = SETTINGS.get("join_gate") and SETTINGS.get("channels")
     rows = []
     if is_premium(uid):
-        status = t(uid, "prem_active", until=fdate(USERS[str(uid)]["premium_until"]))
-    elif gate and joined_all(uid):
-        status = t(uid, "prem_gate_open")
-    elif gate:
-        status = t(uid, "prem_gate_lock")
-        rows += gate_kb(uid)["inline_keyboard"]
+        status = t(uid, "prem_active", until=fdate(rec["premium_until"]), left=days_left(rec))
     else:
-        status = t(uid, "prem_none")
-    rows.append([B("🎟 Redeem", "redeem")])
+        if gate and joined_all(uid):
+            status = t(uid, "prem_gate_open")
+        elif gate:
+            status = t(uid, "prem_gate_lock")
+            rows += gate_kb(uid)["inline_keyboard"]
+        else:
+            status = t(uid, "prem_none")
+        status += t(uid, "prem_free_line", q=quota_text(uid), b=rec["bonus"])
+    plans = ""
+    if SETTINGS.get("plans"):
+        lines = "\n".join(f"• <b>{esc(p['name'])}</b> — {p['days']} {t(uid, 'days')} — {esc(p['price'])}"
+                          for p in SETTINGS["plans"])
+        plans = t(uid, "prem_plans", plans=lines)
+    if contact_url():
+        rows.append([{"text": t(uid, "btn_buy"), "url": contact_url()}])
+    rows.append([B("🎟 Redeem", "redeem"), B(t(uid, "btn_daily"), "mn:daily")])
+    rows.append([B(t(uid, "btn_invite"), "mn:invite")])
     rows.append(home_row(uid))
-    show(chat_id, t(uid, "premium_card", status=status), kb(*rows), mid)
+    limit = SETTINGS["daily_limit"] or "♾"
+    show(chat_id, t(uid, "premium_card", status=status, plans=plans, limit=limit), kb(*rows), mid)
+
+
+def view_daily(chat_id, mid=None):
+    uid = chat_id
+    rec = USERS[str(uid)]
+    n = int(SETTINGS.get("daily_bonus", 1) or 0)
+    if n <= 0:
+        return show(chat_id, t(uid, "daily_off"), kb(home_row(uid)), mid)
+    if rec.get("daily_day") == today():
+        return show(chat_id, t(uid, "daily_done", bonus=rec["bonus"]),
+                    kb([B("⭐ Premium", "mn:premium")], home_row(uid)), mid)
+    rec["daily_day"] = today()
+    extra = ""
+    if rec["streak"] > 0 and rec["streak"] % 7 == 0:
+        rec["bonus"] += 3
+        extra = t(uid, "daily_extra", n=3)
+    rec["bonus"] += n
+    add_xp(rec, 3)
+    mark("users")
+    show(chat_id, t(uid, "daily_ok", n=n, streak=rec["streak"], extra=extra, bonus=rec["bonus"]),
+         kb([B("📥 Quota", "mn:quota"), B("⭐ Premium", "mn:premium")], home_row(uid)), mid)
+
+
+def view_quota(chat_id, mid=None):
+    uid = chat_id
+    rec = USERS[str(uid)]
+    limit = SETTINGS["daily_limit"]
+    used = rec["used_today"] if rec["used_day"] == today() else 0
+    unl = has_perks(uid) or limit <= 0
+    status = (t(uid, "status_premium", until=fdate(rec["premium_until"])) if is_premium(uid)
+              else t(uid, "status_free"))
+    show(chat_id, t(uid, "quota_card", bar=bar(1, 1) if unl else bar(used, limit), q=quota_text(uid),
+                    b=rec["bonus"], status=status),
+         kb([B(t(uid, "btn_daily"), "mn:daily"), B(t(uid, "btn_invite"), "mn:invite")],
+            [B("⭐ Premium", "mn:premium")], home_row(uid)), mid)
+
+
+def premium_watch():
+    """Prothi ghonta: premium sesh hobar 3 din age reminder + sesh hole notice."""
+    while True:
+        time.sleep(3600)
+        try:
+            now = time.time()
+            for uid, rec in list(USERS.items()):
+                until = rec.get("premium_until", 0)
+                if not until or rec.get("notify") is False or rec.get("banned"):
+                    continue
+                if now < until <= now + 3 * 86400 and rec.get("prem_warn") != until:
+                    rec["prem_warn"] = until; mark("users")
+                    send_message(int(uid), t(int(uid), "prem_expiring", left=days_left(rec), until=fdate(until)))
+                elif until <= now and rec.get("prem_warn") == until:
+                    rec["prem_warn"] = 0; rec["premium_until"] = 0; mark("users")
+                    send_message(int(uid), t(int(uid), "prem_expired"))
+        except Exception as e:
+            print("premium_watch error:", e)
 
 
 def view_settings(chat_id, mid=None):
@@ -2104,16 +2189,20 @@ def add_subtitle_file(chat_id, title, year, slug, doc):
             zf = zipfile.ZipFile(io.BytesIO(content))
             for n in zf.namelist():
                 if n.lower().endswith(".srt"):
-                    with open(os.path.join(fdir, os.path.basename(n)), "wb") as f:
+                    _fp = os.path.join(fdir, os.path.basename(n))
+                    with open(_fp, "wb") as f:
                         f.write(zf.read(n))
+                    persist.push_file(BASE, _fp)
                     saved += 1
             with open(os.path.join(fdir, "full-pack.zip"), "wb") as f:
                 f.write(content)
+            persist.push_file(BASE, os.path.join(fdir, "full-pack.zip"))
         except Exception as e:
             send_message(chat_id, t(chat_id, "a_add_zipfail", e=esc(e))); return 0
     else:
         with open(os.path.join(fdir, fname), "wb") as f:
             f.write(content)
+        persist.push_file(BASE, os.path.join(fdir, fname))
         saved = 1
     meta = load_json(CATALOG_FILE, {})
     if slug not in meta:
@@ -2272,6 +2361,15 @@ def admin_wizard(chat_id, msg):
     return False
 
 
+ADMIN_HELP = (
+    "🛠 <b>Admin commands</b>\n"
+    "/admin — control center\n/user ID · /find text\n/grant ID DAYS · /revoke ID\n/addbonus ID N (minus o hoy)\n"
+    "/msg ID text · /ban ID · /unban ID\n/premiumlist · /expiring [DAYS]\n"
+    "/gencode DAYS COUNT [USES] · /codes · /delcode CODE\n"
+    "/plans · /addplan Name | DAYS | Price · /delplan N\n/setcontact @user|link|off · /setdaily N\n"
+    "/addsub · /listsubs · /delsub · /broadcast · /maintenance on|off · /backup")
+
+
 def admin_command(chat_id, user, text):
     global CATALOG
     parts = text.split()
@@ -2304,6 +2402,7 @@ def admin_command(chat_id, user, text):
         name = slugify(" ".join(args))
         if os.path.isdir(os.path.join(DATA_DIR, name)):
             shutil.rmtree(os.path.join(DATA_DIR, name))
+            persist.delete_prefix("data/" + name)
             meta = load_json(CATALOG_FILE, {}); meta.pop(name, None); save_json(CATALOG_FILE, meta)
             CATALOG = load_catalog()
             send_message(c, t(c, "a_lib_deleted", title=esc(name)))
@@ -2335,13 +2434,67 @@ def admin_command(chat_id, user, text):
         user_card(c, args[0]); return True
     if cmd == "/grant" and len(args) >= 2 and args[0] in USERS and args[1].isdigit():
         admin_grant(c, args[0], int(args[1])); user_card(c, args[0]); return True
+    if cmd == "/adminhelp":
+        send_message(c, ADMIN_HELP); return True
+    if cmd == "/revoke" and args and args[0] in USERS:
+        USERS[args[0]]["premium_until"] = 0; mark("users"); user_card(c, args[0]); return True
+    if cmd == "/addbonus" and len(args) >= 2 and args[0] in USERS and args[1].lstrip("-").isdigit():
+        USERS[args[0]]["bonus"] = max(0, USERS[args[0]]["bonus"] + int(args[1])); mark("users")
+        user_card(c, args[0]); return True
+    if cmd == "/msg" and len(args) >= 2 and args[0].isdigit():
+        r_ = send_message(int(args[0]), text.split(maxsplit=2)[2])
+        send_message(c, "✅ Sent" if (r_ or {}).get("ok") else "❌ Failed (user bot block korse?)"); return True
+    if cmd == "/find" and args:
+        q_ = " ".join(args).lower().lstrip("@")
+        hits = [(u, r) for u, r in USERS.items()
+                if q_ == u or q_ in str(r.get("name", "")).lower() or q_ in str(r.get("username", "")).lower()][:15]
+        send_message(c, "\n".join(f"• <code>{u}</code> {esc(r.get('name',''))} @{esc(r.get('username',''))}"
+                                   f"{' ⭐' if r.get('premium_until',0) > time.time() else ''}"
+                                   f"{' 🚫' if r.get('banned') else ''}" for u, r in hits) or "—"); return True
+    if cmd == "/premiumlist":
+        act = sorted(((r["premium_until"], u, r) for u, r in USERS.items() if r.get("premium_until", 0) > time.time()))
+        send_message(c, f"⭐ <b>Active premium: {len(act)}</b>\n" + "\n".join(
+            f"• <code>{u}</code> {esc(r.get('name',''))} — {fdate(un)} ({days_left(r)}d)" for un, u, r in act[:40])); return True
+    if cmd == "/expiring":
+        d_ = int(args[0]) if args and args[0].isdigit() else 3
+        act = sorted(((r["premium_until"], u, r) for u, r in USERS.items()
+                      if time.time() < r.get("premium_until", 0) <= time.time() + d_ * 86400))
+        send_message(c, f"⏳ <b>Ending within {d_}d: {len(act)}</b>\n" + "\n".join(
+            f"• <code>{u}</code> {esc(r.get('name',''))} — {fdate(un)}" for un, u, r in act[:40])); return True
+    if cmd == "/codes":
+        un = [(k, v) for k, v in SETTINGS["codes"].items() if len(v["used_by"]) < v.get("uses", 1)]
+        send_message(c, f"🎟 <b>Unused: {len(un)}</b>\n" + "\n".join(
+            f"<code>{k}</code> — {v['value']} {'days' if v['type']=='premium' else 'bonus'} "
+            f"({len(v['used_by'])}/{v.get('uses',1)})" for k, v in un[:50])); return True
+    if cmd == "/delcode" and args:
+        ok_ = SETTINGS["codes"].pop(args[0].upper(), None) is not None
+        save_settings(); send_message(c, "🗑 Deleted" if ok_ else "❌ Code nai"); return True
+    if cmd == "/plans":
+        send_message(c, "🏷 <b>Plans</b>\n" + ("\n".join(
+            f"{i}. {esc(p['name'])} — {p['days']}d — {esc(p['price'])}" for i, p in enumerate(SETTINGS["plans"], 1))
+            or "— (nai)") + "\n\n/addplan Name | DAYS | Price\n/delplan N\nContact: " + (SETTINGS.get("premium_contact") or "—"))
+        return True
+    if cmd == "/addplan":
+        p_ = [x.strip() for x in text.split(maxsplit=1)[1].split("|")] if len(parts) > 1 else []
+        if len(p_) == 3 and p_[1].isdigit():
+            SETTINGS["plans"].append({"name": p_[0][:30], "days": int(p_[1]), "price": p_[2][:30]}); save_settings()
+            send_message(c, "✅ Plan added"); return True
+        send_message(c, "Format: /addplan Monthly | 30 | ৳100"); return True
+    if cmd == "/delplan" and args and args[0].isdigit() and 0 < int(args[0]) <= len(SETTINGS["plans"]):
+        SETTINGS["plans"].pop(int(args[0]) - 1); save_settings(); send_message(c, "🗑 Removed"); return True
+    if cmd == "/setcontact" and args:
+        SETTINGS["premium_contact"] = "" if args[0].lower() == "off" else args[0]; save_settings()
+        send_message(c, "✅ " + (SETTINGS["premium_contact"] or "off")); return True
+    if cmd == "/setdaily" and args and args[0].isdigit():
+        SETTINGS["daily_bonus"] = int(args[0]); save_settings(); send_message(c, f"✅ Daily bonus = {args[0]}"); return True
     if cmd == "/gencode":
         days = int(args[0]) if args and args[0].isdigit() else 7
         cnt = min(int(args[1]), 50) if len(args) > 1 and args[1].isdigit() else 1
+        uses = max(1, int(args[2])) if len(args) > 2 and args[2].isdigit() else 1
         codes = []
         for _ in range(cnt):
             code = new_code()
-            SETTINGS["codes"][code] = {"type": "premium", "value": days, "uses": 1, "used_by": [],
+            SETTINGS["codes"][code] = {"type": "premium", "value": days, "uses": uses, "used_by": [],
                                        "created": int(time.time())}
             codes.append(code)
         save_settings()
@@ -2444,6 +2597,7 @@ def admin_callback(cb, parts):
     elif act == "libdok" and arg in CATALOG:
         title = CATALOG[arg]["title"]
         shutil.rmtree(os.path.join(DATA_DIR, arg), ignore_errors=True)
+        persist.delete_prefix("data/" + arg)
         meta = load_json(CATALOG_FILE, {}); meta.pop(arg, None); save_json(CATALOG_FILE, meta)
         CATALOG = load_catalog()
         send_message(c, t(c, "a_lib_deleted", title=esc(title))); view_lib(c)
@@ -2517,10 +2671,12 @@ def admin_callback(cb, parts):
 USER_VIEWS = {"/menu": view_home, "/help": view_help, "/profile": view_profile, "/premium": view_premium,
               "/settings": view_settings, "/favorites": view_favs, "/favs": view_favs,
               "/history": view_history, "/invite": view_invite, "/trending": view_trending,
-              "/popular": view_trending, "/top": view_top, "/list": view_library, "/library": view_library}
+              "/popular": view_trending, "/top": view_top, "/list": view_library, "/library": view_library,
+              "/daily": view_daily, "/quota": view_quota, "/limit": view_quota}
 MENU_VIEWS = {"home": view_home, "help": view_help, "profile": view_profile, "premium": view_premium,
               "settings": view_settings, "favs": view_favs, "history": view_history, "invite": view_invite,
-              "trending": view_trending, "library": view_library, "top": view_top}
+              "trending": view_trending, "library": view_library, "top": view_top,
+              "daily": view_daily, "quota": view_quota}
 
 
 def handle_message(msg):
@@ -2622,6 +2778,9 @@ def handle_message(msg):
     if cmd == "/lang":
         send_message(chat_id, T("en", "lang_pick"), lang_picker_kb()); return
     if cmd == "/search":
+        q_ = text.split(maxsplit=1)
+        if len(q_) > 1:
+            handle_query(chat_id, user, rec, q_[1]); return
         UFLOW[uid] = "search"; send_message(chat_id, t(uid, "ask_name")); return
     if cmd == "/menu":
         send_message(chat_id, t(uid, "kb_shown"), reply_kb(uid)); return
@@ -2783,7 +2942,7 @@ def handle_callback(cb):
 
     # ---- tools
     if parts[0] == "tl" and len(parts) == 3:
-        if parts[2] not in subtools.OPS and parts[2] != "vtt":
+        if parts[2] not in subtools.OPS and parts[2] not in ("vtt", "clean"):
             answer_callback(cid); return
         if run_tool(chat_id, uid, parts[1], parts[2]):
             answer_callback(cid, "✅")
@@ -2945,12 +3104,21 @@ CMD_DESC = [
     ("invite", "ইনভাইট ও বোনাস", "Invite & earn"), ("redeem", "কোড রিডিম", "Redeem a code"),
     ("top", "লিডারবোর্ড", "Leaderboard"), ("premium", "প্রিমিয়াম", "Premium"),
     ("settings", "সেটিংস", "Settings"), ("lang", "ভাষা বদলান", "Change language"),
+    ("daily", "ডেইলি বোনাস", "Daily bonus"), ("quota", "আজকের কোটা", "Today's quota"),
+    ("search", "টাইটেল সার্চ", "Search a title"), ("request", "সাবটাইটেল রিকোয়েস্ট", "Request a subtitle"),
     ("feedback", "মতামত পাঠান", "Send feedback"), ("help", "হেল্প", "Help"),
     ("menu", "মেনু বার দেখান", "Show the menu bar"), ("clear", "চ্যাট পরিষ্কার করুন", "Clear this chat"),
 ]
-ADMIN_CMD_DESC = [("admin", "Control center"), ("addsub", "Add subtitles"), ("broadcast", "Broadcast"),
-                  ("user", "User card: /user ID"), ("gencode", "Codes: /gencode DAYS COUNT"),
-                  ("maintenance", "/maintenance on|off")]
+ADMIN_CMD_DESC = [
+    ("admin", "Control center"), ("addsub", "Add subtitles"), ("broadcast", "Broadcast"),
+    ("user", "User card: /user ID"), ("find", "Find user: /find text"),
+    ("grant", "/grant ID DAYS"), ("revoke", "/revoke ID"), ("addbonus", "/addbonus ID N"),
+    ("msg", "/msg ID text"), ("ban", "/ban ID"), ("unban", "/unban ID"),
+    ("premiumlist", "Active premium users"), ("expiring", "Premium ending soon: /expiring [DAYS]"),
+    ("gencode", "/gencode DAYS COUNT [USES]"), ("codes", "Unused codes"), ("delcode", "/delcode CODE"),
+    ("plans", "Premium plans"), ("addplan", "/addplan Name | DAYS | Price"), ("delplan", "/delplan N"),
+    ("setcontact", "/setcontact @user|link|off"), ("setdaily", "/setdaily N (0=off)"),
+    ("maintenance", "/maintenance on|off"), ("backup", "Backup zip"), ("adminhelp", "All admin commands")]
 
 
 def setup_commands():
@@ -3013,6 +3181,10 @@ def startup():
         print("⚠️  config.json a admin_id nai — bot a /id likhe ID niye config.json a boshao।")
     setup_commands()
     threading.Thread(target=flusher, daemon=True).start()
+    persist.start_worker()
+    threading.Thread(target=premium_watch, daemon=True).start()
+
+
 def main():
     startup()
     pool = ThreadPoolExecutor(max_workers=12)
@@ -3035,6 +3207,7 @@ def main():
                 time.sleep(3)
     finally:
         flush()
+        persist.flush()
 
 
 def _valid_init_data(init_data, token):

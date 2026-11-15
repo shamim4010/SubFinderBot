@@ -58,14 +58,44 @@ def srt_to_vtt(text):
     return "WEBVTT\n\n" + body
 
 
+_TAG = re.compile(r"</?[a-zA-Z][^>]*>|\{\\an?\d+\}")
+_SFX = re.compile(r"^\s*[\[\(][^\]\)]{1,60}[\]\)]\s*:?\s*$")
+_MUSIC = re.compile(r"^\s*[♪♫#]+.*$")
+_AD = re.compile(r"(opensubtitles|subscene|yify|yts\b|www\.|https?://|advertis|synced (and|&) corrected|"
+                 r"subtitles? by|translated by|encoded by|\.com\b|\.org\b)", re.I)
+
+
+def clean_srt(text):
+    """HTML/style tag, [sound effect], ♪ music, ad/credit line muche renumber kore."""
+    blocks, out = re.split(r"\r?\n\s*\r?\n", text.strip().replace("\ufeff", "")), []
+    for blk in blocks:
+        lines = blk.strip().splitlines()
+        ti = next((i for i, l in enumerate(lines[:3]) if "-->" in l), None)
+        if ti is None:
+            continue
+        keep = []
+        for l in lines[ti + 1:]:
+            l = _TAG.sub("", l).strip()
+            l = re.sub(r"^[\[\(][^\]\)]{1,60}[\]\)]\s*", "", l).strip() if _SFX.match(l) is None else ""
+            if not l or _MUSIC.match(l) or _AD.search(l):
+                continue
+            keep.append(l)
+        if keep:
+            out.append((lines[ti].strip(), "\n".join(keep)))
+    return "\n\n".join(f"{i}\n{tm}\n{tx}" for i, (tm, tx) in enumerate(out, 1)) + "\n"
+
+
 def make_variant(src_path, out_dir, op):
-    """op: m5/m1/p1/p5/m05/p05/vtt -> (path, label)"""
+    """op: m5/m1/p1/p5/m05/p05/vtt/clean -> (path, label)"""
     os.makedirs(out_dir, exist_ok=True)
     stem = os.path.splitext(os.path.basename(src_path))[0]
     text = read_text(src_path)
     if op == "vtt":
         path = os.path.join(out_dir, f"{stem}.vtt")
         data, label = srt_to_vtt(text), "VTT"
+    elif op == "clean":
+        path = os.path.join(out_dir, f"{stem}.clean.srt")
+        data, label = clean_srt(text), "Clean"
     elif op in OPS:
         label, secs = OPS[op]
         path = os.path.join(out_dir, f"{stem}.{op}.srt")

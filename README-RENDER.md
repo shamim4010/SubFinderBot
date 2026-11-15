@@ -26,6 +26,7 @@ Season pack (full-pack.zip) repo te rakha hoy nai — bot start holei episode fi
    - `JOIN_GATE` = `1` (join gate permanently ON rakhte)
    - `GATE_ALL` = `1` (gate sudhu premium na, SOB feature/library download eo lagbe)
    - `SUBDL_API_KEY` = SubDL API key (optional — thakle SubDL source o auto add hobe)
+   - `MONGODB_URI` = MongoDB Atlas free cluster er connection string (data permanent rakhar jonno — **khub dorkari**)
    ⚠️ GATE_CHANNELS ar JOIN_GATE diye rakhle bot er vitor theke set kora gate ar kokhono redeploy a muchbe na.
 6. **Create Web Service** → deploy hote 2-5 min lagte pare
 7. Deploy sesh hole upore tomar bot er URL dekhba, jemon: `https://subfinder-bot.onrender.com`
@@ -40,5 +41,5 @@ Render free service 15 min kew na dakle ghumiye jay. Jagiye rakhte:
 Telegram a @AnySubFinderBot a giye /start dao. Prothom bar ghum theke uthle uttor aste ~1 min lagte pare, tarpor normal.
 
 ## Mone rakho
-- Bot restart/redeploy hole bot er **user list, cache, ar bot er vitore add kora notun subtitle** muche jabe (Render free te file system permanent na). Bosano library (Code Geass R2) ar online search sob somoy thik thakbe.
+- `MONGODB_URI` dile ei shob data permanent thakbe. Na dile: bot restart/redeploy hole bot er **user list, cache, ar bot er vitore add kora notun subtitle** muche jabe (Render free te file system permanent na). Bosano library (Code Geass R2) ar online search sob somoy thik thakbe.
 - Bot er vitore /addsub diye notun subtitle add korle seta restart porjonto thakbe; permanent korte hole file ta GF ke dile library.zip a dhukiye neya jabe.

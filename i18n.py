@@ -54,14 +54,14 @@ add("help",
     "🔍 শুধু নাম লিখুন — সার্চ হয়ে যাবে (S2 E12, ep 5 — সবই চলে)\n"
     "📚 /list — লাইব্রেরি\n🔥 /trending — সবাই যা খুঁজছে\n❤️ /favorites — সেভ করা টাইটেল\n"
     "🕘 /history — আগের ডাউনলোড\n👤 /profile — লেভেল, XP, স্ট্যাটাস\n🎁 /invite — বন্ধুকে ইনভাইট করে বোনাস\n"
-    "🎟 /redeem — কোড রিডিম\n🏆 /top — লিডারবোর্ড\n💬 /feedback — মতামত পাঠান\n"
+    "🎟 /redeem — কোড রিডিম\n🎁 /daily — ডেইলি বোনাস\n📥 /quota — আজকের কোটা\n🏆 /top — লিডারবোর্ড\n💬 /feedback — মতামত পাঠান\n"
     "⚙️ /settings — ভাষা ও নোটিফিকেশন\n🆔 /id — আপনার আইডি\n\n"
     "⏱ <b>টুলস:</b> সাবটাইটেল পাওয়ার পর নিচের বাটনে সিঙ্ক ঠিক করুন বা VTT বানান — এগুলো ফ্রি, কোটা কাটে না।",
     "❓ <b>Help Center</b>\n{D}\n"
     "🔍 Just type a name — S2 E12, ep 5 all work\n"
     "📚 /list — library\n🔥 /trending — what everyone searches\n❤️ /favorites — saved titles\n"
     "🕘 /history — past downloads\n👤 /profile — level, XP, status\n🎁 /invite — invite friends for bonus\n"
-    "🎟 /redeem — redeem a code\n🏆 /top — leaderboard\n💬 /feedback — send feedback\n"
+    "🎟 /redeem — redeem a code\n🎁 /daily — daily bonus\n📥 /quota — today's quota\n🏆 /top — leaderboard\n💬 /feedback — send feedback\n"
     "⚙️ /settings — language & notifications\n🆔 /id — your ID\n\n"
     "⏱ <b>Tools:</b> after you get a subtitle, use the buttons to fix sync or convert to VTT — free, no quota used.")
 add("banned", "🚫 আপনার অ্যাকাউন্ট ব্লক করা হয়েছে।", "🚫 Your account has been suspended.")
@@ -158,11 +158,34 @@ add("a_gate_warn",
 add("premium_locked", "🔒 অনলাইন সার্চ এখন শুধু <b>প্রিমিয়াম</b> ইউজারদের জন্য।\n🎟 কোড থাকলে /redeem করুন।",
     "🔒 Online search is <b>Premium-only</b> right now.\n🎟 Have a code? Use /redeem.")
 add("premium_card",
-    "⭐ <b>SubFinder প্রিমিয়াম</b>\n{D}\n🌐 অনলাইন সার্চ — যেকোনো মুভি/অ্যানিমে (বাংলা + English)\n"
-    "📦 ফুল সিজন ZIP — এক ক্লিকে\n♾ আনলিমিটেড ডাউনলোড\n⚡ ক্যাশ থেকে ইনস্ট্যান্ট ডেলিভারি\n{D}\n{status}",
-    "⭐ <b>SubFinder Premium</b>\n{D}\n🌐 Online search — any movie/anime (Bangla + English)\n"
-    "📦 Full Season ZIP — one tap\n♾ Unlimited downloads\n⚡ Instant delivery from cache\n{D}\n{status}")
-add("prem_active", "✅ আপনার প্রিমিয়াম চালু আছে — মেয়াদ: <b>{until}</b>", "✅ Premium active — valid until <b>{until}</b>")
+    "⭐ <b>SubFinder প্রিমিয়াম</b>\n{D}\n"
+    "🆓 <b>ফ্রি:</b> দিনে {limit}টি ডাউনলোড\n"
+    "💎 <b>প্রিমিয়াম:</b>\n"
+    "  ♾ আনলিমিটেড ডাউনলোড\n  🌐 অনলাইন সার্চ — যেকোনো মুভি/অ্যানিমে (বাংলা + English)\n"
+    "  📦 ফুল সিজন ZIP — এক ক্লিকে\n  ⚡ ক্যাশ থেকে ইনস্ট্যান্ট ডেলিভারি\n  🚫 কোনো লিমিট/অপেক্ষা নেই\n"
+    "{plans}{D}\n{status}",
+    "⭐ <b>SubFinder Premium</b>\n{D}\n"
+    "🆓 <b>Free:</b> {limit} downloads/day\n"
+    "💎 <b>Premium:</b>\n"
+    "  ♾ Unlimited downloads\n  🌐 Online search — any movie/anime (Bangla + English)\n"
+    "  📦 Full Season ZIP — one tap\n  ⚡ Instant delivery from cache\n  🚫 No limits, no waiting\n"
+    "{plans}{D}\n{status}")
+add("prem_plans", "{D}\n🏷 <b>প্ল্যান:</b>\n{plans}\n", "{D}\n🏷 <b>Plans:</b>\n{plans}\n")
+add("days", "দিন", "days")
+add("prem_active", "✅ প্রিমিয়াম চালু — মেয়াদ: <b>{until}</b> (আর <b>{left}</b> দিন)", "✅ Premium active — until <b>{until}</b> (<b>{left}</b> days left)")
+add("prem_free_line", "\n📥 আজকের ডাউনলোড: <b>{q}</b> · 💎 বোনাস: <b>{b}</b>", "\n📥 Today: <b>{q}</b> · 💎 Bonus: <b>{b}</b>")
+add("btn_buy", "💬 প্রিমিয়াম কিনুন / যোগাযোগ", "💬 Get Premium / Contact")
+add("btn_daily", "🎁 ডেইলি বোনাস", "🎁 Daily bonus")
+add("daily_ok", "🎁 <b>ডেইলি বোনাস পেয়েছেন!</b>\n{D}\n💎 +{n} বোনাস ডাউনলোড\n🔥 স্ট্রিক: <b>{streak}</b> দিন{extra}\n💎 মোট বোনাস: <b>{bonus}</b>\n\n<i>কাল আবার আসুন!</i>",
+    "🎁 <b>Daily bonus claimed!</b>\n{D}\n💎 +{n} bonus downloads\n🔥 Streak: <b>{streak}</b> days{extra}\n💎 Total bonus: <b>{bonus}</b>\n\n<i>Come back tomorrow!</i>")
+add("daily_extra", "\n🏆 ৭ দিনের স্ট্রিক বোনাস: +{n}", "\n🏆 7-day streak bonus: +{n}")
+add("daily_done", "✅ আজকের বোনাস নেওয়া হয়ে গেছে। পরের বোনাস: <b>কাল</b>।\n💎 বোনাস: <b>{bonus}</b>", "✅ You already claimed today's bonus. Next one: <b>tomorrow</b>.\n💎 Bonus: <b>{bonus}</b>")
+add("daily_off", "ডেইলি বোনাস এখন বন্ধ আছে।", "Daily bonus is currently off.")
+add("quota_card", "📥 <b>আজকের কোটা</b>\n{D}\n{bar} <b>{q}</b>\n💎 বোনাস ডাউনলোড: <b>{b}</b>\n⭐ স্ট্যাটাস: {status}\n\n💡 বাড়াতে: /daily · /invite · /redeem",
+    "📥 <b>Today's quota</b>\n{D}\n{bar} <b>{q}</b>\n💎 Bonus downloads: <b>{b}</b>\n⭐ Status: {status}\n\n💡 Get more: /daily · /invite · /redeem")
+add("prem_expiring", "⏳ <b>আপনার প্রিমিয়াম {left} দিনের মধ্যে শেষ হবে</b> ({until})।\nচালু রাখতে নতুন কোড /redeem করুন বা /premium দেখুন।",
+    "⏳ <b>Your Premium ends in {left} day(s)</b> ({until}).\nRenew with a code via /redeem or see /premium.")
+add("prem_expired", "⌛ আপনার প্রিমিয়াম শেষ হয়েছে। আবার নিতে /premium দেখুন।", "⌛ Your Premium has ended. See /premium to renew.")
 add("prem_gate_open", "✅ চ্যানেল জয়েন করা আছে — প্রিমিয়াম ফিচার খোলা!", "✅ Channels joined — premium features unlocked!")
 add("prem_gate_lock", "🔒 আনলক করতে নিচের চ্যানেলগুলোতে জয়েন করুন 👇\n🎟 অথবা কোড থাকলে /redeem",
     "🔒 Join the channels below to unlock 👇\n🎟 Or use /redeem if you have a code")
@@ -412,3 +435,7 @@ add("a_users_csv", "📄 ইউজার এক্সপোর্ট", "📄 Use
 add("a_feedback", "💬 <b>ফিডব্যাক</b> — {name} (<code>{uid}</code>)\n{D}\n{text}", "💬 <b>Feedback</b> — {name} (<code>{uid}</code>)\n{D}\n{text}")
 add("a_not_set", "⚠️ <b>admin_id সেট করা নেই।</b> config.json এ আপনার ID বসান (বটে /id লিখে পাবেন)।",
     "⚠️ <b>admin_id is not set.</b> Put your ID in config.json (send /id to the bot).")
+
+
+# ============================================================ v7: clean + AI translate
+add("tool_clean", "🧹 ক্লিন করুন", "🧹 Clean")
