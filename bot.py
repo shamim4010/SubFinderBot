@@ -385,6 +385,24 @@ def fmt_uptime():
 
 # ================================================================ telegram helpers
 CHAT_MSGS = {}
+CHATMSGS_FILE = os.path.join(BASE, "chatmsgs.json")
+try:
+    for _k, _v in load_json(CHATMSGS_FILE, {}).items():
+        CHAT_MSGS[int(_k)] = [int(x) for x in _v][-1000:]
+except Exception:
+    pass
+_CM_SAVE = [0.0]
+
+
+def _save_chatmsgs(force=False):
+    now = time.time()
+    if not force and now - _CM_SAVE[0] < 10:
+        return
+    _CM_SAVE[0] = now
+    try:
+        save_json(CHATMSGS_FILE, {str(k): v for k, v in CHAT_MSGS.items()})
+    except Exception:
+        pass
 
 
 def track_msg(chat_id, mid):
@@ -393,13 +411,15 @@ def track_msg(chat_id, mid):
     lst = CHAT_MSGS.setdefault(chat_id, [])
     if mid not in lst:
         lst.append(mid)
-    if len(lst) > 300:
-        del lst[:len(lst) - 300]
+    if len(lst) > 1000:
+        del lst[:len(lst) - 1000]
+    _save_chatmsgs()
 
 
 def clear_chat(chat_id, user):
     ids = CHAT_MSGS.pop(chat_id, [])
     PANEL.pop(chat_id, None)
+    _save_chatmsgs(force=True)
 
     def _run():
         for mid in ids:
