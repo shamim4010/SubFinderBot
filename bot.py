@@ -402,7 +402,7 @@ def clear_chat(chat_id, user):
                 api_post("deleteMessage", {"chat_id": chat_id, "message_id": mid})
             except Exception:
                 pass
-        send_welcome(chat_id, user)
+        send_welcome(chat_id, user, kb=False)
 
     threading.Thread(target=_run, daemon=True).start()
 
@@ -532,7 +532,7 @@ def reply_kb(uid):
         [t(uid, "btn_trending"), t(uid, "btn_favs")],
         [t(uid, "btn_profile"), t(uid, "btn_premium")],
         [{"text": t(uid, "btn_request"), "style": "primary"}, t(uid, "btn_settings")]],
-        "resize_keyboard": False, "is_persistent": True, "one_time_keyboard": True}
+        "resize_keyboard": False, "is_persistent": True}
 
 
 LABELS = {}
@@ -859,7 +859,7 @@ LIBCAT_ICONS = {"movie": "🎬", "anime": "📺", "drama": "🎭"}
 def libcat_kb():
     return {"keyboard": [[{"text": "🎬 Movie"}, {"text": "📺 Anime"}],
                          [{"text": "🎭 Drama"}, {"text": "🏠 Main Menu"}]],
-            "resize_keyboard": False, "is_persistent": True, "one_time_keyboard": True}
+            "resize_keyboard": False, "is_persistent": True}
 
 
 def cat_kind(a):
@@ -1589,9 +1589,9 @@ def view_top(chat_id, mid=None):
     show(chat_id, t(chat_id, "top_title", rows="\n".join(lines) or "—"), kb(home_row(chat_id)), mid)
 
 
-def send_welcome(chat_id, user):
+def send_welcome(chat_id, user, kb=True):
     old = PANEL.get(chat_id)
-    send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))))
+    send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))), reply_kb(chat_id) if kb else None)
     send_message(chat_id, t(chat_id, "menu_title"), main_menu_kb(chat_id))
     new = BOT_LAST.get(chat_id)
     if new:
