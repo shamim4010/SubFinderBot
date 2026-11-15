@@ -1591,7 +1591,7 @@ def view_top(chat_id, mid=None):
 
 def send_welcome(chat_id, user):
     old = PANEL.get(chat_id)
-    send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))), {"remove_keyboard": True})
+    send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))))
     send_message(chat_id, t(chat_id, "menu_title"), main_menu_kb(chat_id))
     new = BOT_LAST.get(chat_id)
     if new:
@@ -2444,7 +2444,7 @@ def handle_message(msg):
         else:
             send_welcome(chat_id, user)
         return
-    if gate_blocked(uid) and cmd not in ("/lang", "/id", "/cancel"):
+    if gate_blocked(uid) and cmd not in ("/lang", "/id", "/cancel", "/menu"):
         if rec["lang"] is None:
             send_message(chat_id, T("en", "lang_pick"), lang_picker_kb(":w"))
         else:
@@ -2458,6 +2458,8 @@ def handle_message(msg):
         send_message(chat_id, T("en", "lang_pick"), lang_picker_kb()); return
     if cmd == "/search":
         UFLOW[uid] = "search"; send_message(chat_id, t(uid, "ask_name")); return
+    if cmd == "/menu":
+        send_message(chat_id, t(uid, "kb_shown"), reply_kb(uid)); return
 
     # ---- library category buttons (nicher menu)
     if text in LIBCAT_BTNS:
@@ -2779,6 +2781,7 @@ CMD_DESC = [
     ("top", "লিডারবোর্ড", "Leaderboard"), ("premium", "প্রিমিয়াম", "Premium"),
     ("settings", "সেটিংস", "Settings"), ("lang", "ভাষা বদলান", "Change language"),
     ("feedback", "মতামত পাঠান", "Send feedback"), ("help", "হেল্প", "Help"),
+    ("menu", "মেনু বার দেখান", "Show the menu bar"), ("clear", "চ্যাট পরিষ্কার করুন", "Clear this chat"),
 ]
 ADMIN_CMD_DESC = [("admin", "Control center"), ("addsub", "Add subtitles"), ("broadcast", "Broadcast"),
                   ("user", "User card: /user ID"), ("gencode", "Codes: /gencode DAYS COUNT"),
