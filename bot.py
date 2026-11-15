@@ -554,7 +554,7 @@ def main_menu_kb(uid):
               [B(t(uid, "btn_profile"), "mn:profile", "primary"), B(t(uid, "btn_invite"), "mn:invite", "primary")],
               [B(t(uid, "btn_premium"), "mn:premium", "success"), B(t(uid, "btn_settings"), "mn:settings", "primary")],
               [B(t(uid, "btn_help"), "mn:help")],
-              [{"text": t(uid, "btn_buybot"), "url": "https://t.me/Shamim_Islam_N", "style": "primary"}])
+              [B(t(uid, "btn_buybot"), "mn:buybot", "primary")])
 
 
 def home_row(uid):
@@ -1360,7 +1360,7 @@ APP_HTML = """<!DOCTYPE html>
     <div class="act" onclick="openLink('https://t.me/animesub_bd')"><span class="ic">📢</span><span class="tx">Channel</span></div>
     <div class="act" onclick="openBot('library')"><span class="ic">🎭</span><span class="tx">Categories</span></div>
   </div>
-  <div class="act" style="margin-bottom:18px" onclick="openLink('https://t.me/Shamim_Islam_N')"><span class="ic">🤖</span><span class="tx">Buy Your Own Bot — @Shamim_Islam_N</span></div>
+  <div class="act" style="margin-bottom:18px" onclick="openBot('buybot')"><span class="ic">🤖</span><span class="tx">Buy Your Own Bot — @Shamim_Islam_N</span></div>
 
   <div class="card">
     <h2>🔍 Search subtitles</h2>
@@ -1724,6 +1724,13 @@ def view_premium(chat_id, mid=None):
     rows.append(home_row(uid))
     limit = SETTINGS["daily_limit"] or "♾"
     show(chat_id, t(uid, "premium_card", status=status, plans=plans, limit=limit), kb(*rows), mid)
+
+
+def view_buybot(chat_id, mid=None):
+    uid = chat_id
+    rows = [[{"text": t(uid, "buy_contact"), "url": "https://t.me/Shamim_Islam_N", "style": "success"}],
+            home_row(uid)]
+    show(chat_id, t(uid, "buy_body"), kb(*rows), mid)
 
 
 def view_daily(chat_id, mid=None):
@@ -2683,7 +2690,7 @@ USER_VIEWS = {"/menu": view_home, "/help": view_help, "/profile": view_profile, 
 MENU_VIEWS = {"home": view_home, "help": view_help, "profile": view_profile, "premium": view_premium,
               "settings": view_settings, "favs": view_favs, "history": view_history, "invite": view_invite,
               "trending": view_trending, "library": view_library, "top": view_top,
-              "daily": view_daily, "quota": view_quota}
+              "daily": view_daily, "quota": view_quota, "buybot": view_buybot}
 
 
 def handle_message(msg):
@@ -2771,6 +2778,8 @@ def handle_message(msg):
                 view_trending(chat_id)
             elif payload == "request":
                 make_request(chat_id, user)
+            elif payload == "buybot":
+                view_buybot(chat_id)
         return
     if gate_blocked(uid) and cmd not in ("/lang", "/id", "/cancel", "/menu"):
         if rec["lang"] is None:

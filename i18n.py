@@ -84,6 +84,10 @@ add("btn_history", "🕘 হিস্ট্রি", "🕘 History")
 add("btn_invite", "🎁 ইনভাইট", "🎁 Invite")
 add("btn_help", "❓ হেল্প", "❓ Help")
 add("btn_buybot", "🤖 নিজের বট কিনুন", "🤖 Buy Your Own Bot")
+add("buy_contact", "💬 Contact — @Shamim_Islam_N", "💬 Contact — @Shamim_Islam_N")
+add("buy_body",
+    "🤖 <b>নিজের এমন একটা বট চাও?</b>\n\nএই SubFinder এর মতোই নিজের নামে একটা সাবটাইটেল বট বানিয়ে নিতে পারো। যা যা পাবা:\n\n✅ নিজের bot name, logo আর ব্র্যান্ডিং\n✅ Library + online subtitle search (বাংলা ও English)\n✅ Join gate, premium system আর admin panel\n✅ Mini App সহ full setup করে দেওয়া হবে\n\n💬 দাম আর বিস্তারিত জানতে নিচের button এ contact করো — কেমন bot চাও শুধু বললেই হবে।",
+    "🤖 <b>Want a bot like this of your own?</b>\n\nYou can get a subtitle bot just like SubFinder, under your own name. What you get:\n\n✅ Your own bot name, logo and branding\n✅ Library + online subtitle search (Bangla & English)\n✅ Join gate, premium system and admin panel\n✅ Full setup done for you, Mini App included\n\n💬 Tap the contact button below for price and details — just say what kind of bot you want.")
 add("btn_home", "⬅️ মেইন মেনু", "⬅️ Main Menu")
 
 # ============================================================ search / library
