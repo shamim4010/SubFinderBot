@@ -3176,7 +3176,7 @@ def dispatch(upd):
 
 
 
-BOT_DESC = '🎬 SubFinder — Subtitles in Seconds!\n\nFind Bangla & English subtitles for any Movie, Anime or Series.\n\nJust type a title — get the .srt file instantly, from our library or online.\n\n✨ Library + online search\n🎭 Movie • Anime • Drama\n📩 Request any missing title\n⭐ Premium = unlimited downloads\n\nTap Start Bot and grab your first subtitle! 🍿'
+BOT_DESC = '🎬 Welcome to SubFinder!\n\nYour ultimate subtitle companion for Movies, Anime & TV Series.\n\n🔍 Find Bangla & English subtitles effortlessly by searching for any title.\n\n✨ What You Can Find:\n\n- 🎥 Movie Subtitles\n- 🎌 Anime Subtitles\n- 📺 TV Series & Drama Subtitles\n- 🌐 Bangla & English Languages\n- 📂 Library & Online Subtitle Search\n- 📥 Download Subtitles in .SRT Format\n\nOne Search. Every Subtitle.\n\nEnjoy your favorite content with SubFinder! 💙'
 BOT_SHORT_DESC = '🎬 Bangla & English subtitles for Movies, Anime & Series — type a name, get the .srt instantly!'
 
 
