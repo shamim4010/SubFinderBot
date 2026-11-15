@@ -3176,6 +3176,22 @@ def dispatch(upd):
 
 
 
+BOT_DESC = '🎬 SubFinder — Subtitles in Seconds!\n\nFind Bangla & English subtitles for any Movie, Anime or Series.\n\nJust type a title — get the .srt file instantly, from our library or online.\n\n✨ Library + online search\n🎭 Movie • Anime • Drama\n📩 Request any missing title\n⭐ Premium = unlimited downloads\n\nTap Start Bot and grab your first subtitle! 🍿'
+BOT_SHORT_DESC = '🎬 Bangla & English subtitles for Movies, Anime & Series — type a name, get the .srt instantly!'
+
+
+def sync_bot_profile():
+    try:
+        cur = api_post("getMyDescription")
+        if cur.get("ok") and (cur.get("result") or {}).get("description") != BOT_DESC:
+            api_post("setMyDescription", {"description": BOT_DESC})
+        cur = api_post("getMyShortDescription")
+        if cur.get("ok") and (cur.get("result") or {}).get("short_description") != BOT_SHORT_DESC:
+            api_post("setMyShortDescription", {"short_description": BOT_SHORT_DESC})
+    except Exception:
+        pass
+
+
 def startup():
     global BOT_USERNAME
     if not TOKEN:
@@ -3193,6 +3209,7 @@ def startup():
     print("Library:", {k: len(v["episodes"]) for k, v in CATALOG.items()})
     print("Sources:", list(SOURCE_OBJS), "| Owner:", ADMIN_ID, "| Admins:", SETTINGS["admins"],
           "| Users:", len(USERS))
+    sync_bot_profile()
     if ADMIN_ID is None:
         print("⚠️  config.json a admin_id nai — bot a /id likhe ID niye config.json a boshao।")
     setup_commands()
