@@ -89,6 +89,9 @@ add("btn_home", "⬅️ মেইন মেনু", "⬅️ Main Menu")
 add("lib_empty", "📭 এখনো কোনো সাবটাইটেল যোগ হয়নি।", "📭 No subtitles in the library yet.")
 add("lib_title", "📚 <b>আমাদের লাইব্রেরি</b>\n{D}\nযেটি লাগবে চাপ দিন 👇", "📚 <b>Our Library</b>\n{D}\nTap what you need 👇")
 add("lib_row", "🎬 {title} ({n} ep)", "🎬 {title} ({n} ep)")
+add("lib_cat_prompt", "📚 <b>লাইব্রেরি</b>\nক্যাটাগরি বেছে নিন 👇", "📚 <b>Library</b>\nChoose a category 👇")
+add("lib_cat_title", "{icon} <b>{kind} লাইব্রেরি</b>\nযেটি লাগবে চাপ দিন 👇", "{icon} <b>{kind} Library</b>\nTap what you need 👇")
+add("lib_cat_empty", "{icon} এই ক্যাটাগরিতে এখনো কিছু যোগ হয়নি 😔\nরিকোয়েস্ট করলে যোগ করে দেব!", "{icon} Nothing in this category yet 😔\nSend a request and I'll add it!")
 add("anime_card",
     "🎬 <b>{title}</b>{yr}\n{D}\n📦 মোট <b>{n}</b>টি এপিসোড{rng} · 🇧🇩 বাংলা সাবটাইটেল{note}\n\nএপিসোড বেছে নিন 👇",
     "🎬 <b>{title}</b>{yr}\n{D}\n📦 <b>{n}</b> episodes{rng} · 🇧🇩 Bangla subtitles{note}\n\nPick an episode 👇")

@@ -796,13 +796,37 @@ def online_row(uid):
     return [B(t(uid, "online_btn"), "online")]
 
 
+LIBCAT_BTNS = {"🎬 Movie": "movie", "📺 Anime": "anime", "🎭 Drama": "drama"}
+LIBCAT_ICONS = {"movie": "🎬", "anime": "📺", "drama": "🎭"}
+
+
+def libcat_kb():
+    return {"keyboard": [[{"text": "🎬 Movie"}, {"text": "📺 Anime"}],
+                         [{"text": "🎭 Drama"}, {"text": "🏠 Main Menu"}]],
+            "resize_keyboard": False, "is_persistent": True}
+
+
+def cat_kind(a):
+    k = str(a.get("kind") or a.get("type") or "anime").lower()
+    return k if k in LIBCAT_ICONS else "anime"
+
+
+def view_library_cat(chat_id, kind):
+    uid = chat_id
+    aids = [aid for aid, a in CATALOG.items() if cat_kind(a) == kind]
+    icon = LIBCAT_ICONS[kind]
+    if not aids:
+        send_message(chat_id, t(uid, "lib_cat_empty", icon=icon),
+                     kb([B(t(uid, "req_btn"), "req")], home_row(uid)))
+        return
+    rows = [[B(t(uid, "lib_row", title=CATALOG[aid]["title"], n=len(CATALOG[aid]["episodes"])), f"show:{aid}")]
+            for aid in aids]
+    rows.append(home_row(uid))
+    send_message(chat_id, t(uid, "lib_cat_title", icon=icon, kind=kind.capitalize()), kb(*rows))
+
+
 def view_library(chat_id, mid=None):
-    if not CATALOG:
-        return show(chat_id, t(chat_id, "lib_empty"), kb(home_row(chat_id)), mid)
-    rows = [[B(t(chat_id, "lib_row", title=a["title"], n=len(a["episodes"])), f"show:{aid}")]
-            for aid, a in CATALOG.items()]
-    rows.append(home_row(chat_id))
-    show(chat_id, t(chat_id, "lib_title"), kb(*rows), mid)
+    send_message(chat_id, t(chat_id, "lib_cat_prompt"), libcat_kb())
 
 
 # ================================================================ online flow
@@ -2368,6 +2392,14 @@ def handle_message(msg):
         send_message(chat_id, T("en", "lang_pick"), lang_picker_kb()); return
     if cmd == "/search":
         UFLOW[uid] = "search"; send_message(chat_id, t(uid, "ask_name")); return
+
+    # ---- library category buttons (nicher menu)
+    if text in LIBCAT_BTNS:
+        UFLOW.pop(uid, None)
+        view_library_cat(chat_id, LIBCAT_BTNS[text]); return
+    if text == "🏠 Main Menu":
+        UFLOW.pop(uid, None)
+        send_welcome(chat_id, user); return
 
     # ---- pending user flows
     if text in LABELS:
