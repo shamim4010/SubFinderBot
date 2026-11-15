@@ -15,7 +15,7 @@ import time
 
 URI = os.environ.get("MONGODB_URI", "").strip()
 DB_NAME = os.environ.get("MONGODB_DB", "subfinder")
-SYNCED = ("users.json", "settings.json", "stats.json", "requests.json", "catalog.json", "chatmsgs.json")
+SYNCED = ("users.json", "settings.json", "stats.json", "requests.json", "catalog.json")
 
 _db = None
 _dirty = {}          # filename -> local path
