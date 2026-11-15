@@ -394,6 +394,7 @@ def track_msg(chat_id, mid):
 
 def clear_chat(chat_id, user):
     ids = CHAT_MSGS.pop(chat_id, [])
+    PANEL.pop(chat_id, None)
 
     def _run():
         for mid in ids:
@@ -404,6 +405,28 @@ def clear_chat(chat_id, user):
         send_welcome(chat_id, user)
 
     threading.Thread(target=_run, daemon=True).start()
+
+
+BOT_LAST = {}
+PANEL = {}
+
+
+def delete_msg(chat_id, mid):
+    if chat_id and mid:
+        try:
+            api_post("deleteMessage", {"chat_id": chat_id, "message_id": mid})
+        except Exception:
+            pass
+
+
+def panel_refresh(chat_id, before):
+    """Notun nav message ashle ager panel muche ekta live panel rakhe (dynamic chat)."""
+    new = BOT_LAST.get(chat_id)
+    if new and new != before:
+        old = PANEL.get(chat_id)
+        if old and old != new:
+            delete_msg(chat_id, old)
+        PANEL[chat_id] = new
 
 
 def api_post(method, data=None, files=None, timeout=60):
@@ -419,6 +442,7 @@ def api_post(method, data=None, files=None, timeout=60):
                 _res = j.get("result") or {}
                 if isinstance(_res, dict) and _res.get("message_id"):
                     track_msg(data["chat_id"], _res["message_id"])
+                    BOT_LAST[data["chat_id"]] = _res["message_id"]
             return j
         except Exception as e:
             print("API error:", method, e)
@@ -508,7 +532,7 @@ def reply_kb(uid):
         [t(uid, "btn_trending"), t(uid, "btn_favs")],
         [t(uid, "btn_profile"), t(uid, "btn_premium")],
         [{"text": t(uid, "btn_request"), "style": "primary"}, t(uid, "btn_settings")]],
-        "resize_keyboard": False, "is_persistent": True}
+        "resize_keyboard": False, "is_persistent": True, "one_time_keyboard": True}
 
 
 LABELS = {}
@@ -835,7 +859,7 @@ LIBCAT_ICONS = {"movie": "🎬", "anime": "📺", "drama": "🎭"}
 def libcat_kb():
     return {"keyboard": [[{"text": "🎬 Movie"}, {"text": "📺 Anime"}],
                          [{"text": "🎭 Drama"}, {"text": "🏠 Main Menu"}]],
-            "resize_keyboard": False, "is_persistent": True}
+            "resize_keyboard": False, "is_persistent": True, "one_time_keyboard": True}
 
 
 def cat_kind(a):
@@ -1568,6 +1592,8 @@ def view_top(chat_id, mid=None):
 def send_welcome(chat_id, user):
     send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))), reply_kb(chat_id))
     send_message(chat_id, t(chat_id, "menu_title"), main_menu_kb(chat_id))
+    if chat_id not in PANEL and BOT_LAST.get(chat_id):
+        PANEL[chat_id] = BOT_LAST[chat_id]
 
 
 def process_referral(user, new_rec, payload):
@@ -2432,10 +2458,16 @@ def handle_message(msg):
     # ---- library category buttons (nicher menu)
     if text in LIBCAT_BTNS:
         UFLOW.pop(uid, None)
-        view_library_cat(chat_id, LIBCAT_BTNS[text]); return
+        _b = BOT_LAST.get(chat_id)
+        view_library_cat(chat_id, LIBCAT_BTNS[text])
+        panel_refresh(chat_id, _b)
+        delete_msg(chat_id, msg.get("message_id")); return
     if text == "🏠 Main Menu":
         UFLOW.pop(uid, None)
-        send_welcome(chat_id, user); return
+        _b = BOT_LAST.get(chat_id)
+        send_welcome(chat_id, user)
+        panel_refresh(chat_id, _b)
+        delete_msg(chat_id, msg.get("message_id")); return
 
     # ---- pending user flows
     if text in LABELS:
@@ -2459,7 +2491,9 @@ def handle_message(msg):
         return
 
     if cmd in USER_VIEWS:
-        USER_VIEWS[cmd](chat_id); return
+        _b = BOT_LAST.get(chat_id)
+        USER_VIEWS[cmd](chat_id)
+        panel_refresh(chat_id, _b); return
     if cmd == "/id":
         send_message(chat_id, f"🆔 <code>{uid}</code>"); return
     if cmd == "/redeem":
@@ -2484,6 +2518,7 @@ def handle_message(msg):
     # ---- reply keyboard buttons
     act = LABELS.get(text)
     if act:
+        _b = BOT_LAST.get(chat_id)
         if act == "search":
             UFLOW[uid] = "search"
             send_message(chat_id, t(uid, "ask_name"))
@@ -2492,6 +2527,8 @@ def handle_message(msg):
         else:
             {"library": view_library, "trending": view_trending, "favs": view_favs,
              "profile": view_profile, "premium": view_premium, "settings": view_settings}[act](chat_id)
+        panel_refresh(chat_id, _b)
+        delete_msg(chat_id, msg.get("message_id"))
         return
 
     send_message(chat_id, t(uid, "search_hint"), reply_kb(uid))
@@ -2542,7 +2579,9 @@ def handle_callback(cb):
         answer_callback(cid)
         fn = MENU_VIEWS.get(parts[1] if len(parts) > 1 else "home")
         if fn:
+            _b = BOT_LAST.get(chat_id)
             fn(chat_id, mid)
+            panel_refresh(chat_id, _b)
         return
     if parts[0] == "set" and len(parts) == 2:
         answer_callback(cid)
