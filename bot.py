@@ -553,7 +553,8 @@ def main_menu_kb(uid):
               [B(t(uid, "btn_favs"), "mn:favs", "primary"), B(t(uid, "btn_history"), "mn:history", "primary")],
               [B(t(uid, "btn_profile"), "mn:profile", "primary"), B(t(uid, "btn_invite"), "mn:invite", "primary")],
               [B(t(uid, "btn_premium"), "mn:premium", "success"), B(t(uid, "btn_settings"), "mn:settings", "primary")],
-              [B(t(uid, "btn_help"), "mn:help")])
+              [B(t(uid, "btn_help"), "mn:help")],
+              [{"text": t(uid, "btn_buybot"), "url": "https://t.me/Shamim_Islam_N", "style": "primary"}])
 
 
 def home_row(uid):
@@ -1359,6 +1360,7 @@ APP_HTML = """<!DOCTYPE html>
     <div class="act" onclick="openLink('https://t.me/animesub_bd')"><span class="ic">📢</span><span class="tx">Channel</span></div>
     <div class="act" onclick="openBot('library')"><span class="ic">🎭</span><span class="tx">Categories</span></div>
   </div>
+  <div class="act" style="margin-bottom:18px" onclick="openLink('https://t.me/Shamim_Islam_N')"><span class="ic">🤖</span><span class="tx">Buy Your Own Bot — @Shamim_Islam_N</span></div>
 
   <div class="card">
     <h2>🔍 Search subtitles</h2>

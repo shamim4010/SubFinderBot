@@ -83,6 +83,7 @@ add("btn_settings", "⚙️ সেটিংস", "⚙️ Settings")
 add("btn_history", "🕘 হিস্ট্রি", "🕘 History")
 add("btn_invite", "🎁 ইনভাইট", "🎁 Invite")
 add("btn_help", "❓ হেল্প", "❓ Help")
+add("btn_buybot", "🤖 নিজের বট কিনুন", "🤖 Buy Your Own Bot")
 add("btn_home", "⬅️ মেইন মেনু", "⬅️ Main Menu")
 
 # ============================================================ search / library
