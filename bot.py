@@ -379,6 +379,33 @@ def fmt_uptime():
 
 
 # ================================================================ telegram helpers
+CHAT_MSGS = {}
+
+
+def track_msg(chat_id, mid):
+    if not chat_id or not mid:
+        return
+    lst = CHAT_MSGS.setdefault(chat_id, [])
+    if mid not in lst:
+        lst.append(mid)
+    if len(lst) > 300:
+        del lst[:len(lst) - 300]
+
+
+def clear_chat(chat_id, user):
+    ids = CHAT_MSGS.pop(chat_id, [])
+
+    def _run():
+        for mid in ids:
+            try:
+                api_post("deleteMessage", {"chat_id": chat_id, "message_id": mid})
+            except Exception:
+                pass
+        send_welcome(chat_id, user)
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def api_post(method, data=None, files=None, timeout=60):
     for attempt in range(2):
         try:
@@ -387,6 +414,11 @@ def api_post(method, data=None, files=None, timeout=60):
             if not j.get("ok") and j.get("error_code") == 429 and attempt == 0:
                 time.sleep(min(j.get("parameters", {}).get("retry_after", 2), 10))
                 continue
+            if j.get("ok") and method in ("sendMessage", "sendPhoto", "sendDocument",
+                                          "sendAnimation", "sendVideo") and data and data.get("chat_id"):
+                _res = j.get("result") or {}
+                if isinstance(_res, dict) and _res.get("message_id"):
+                    track_msg(data["chat_id"], _res["message_id"])
             return j
         except Exception as e:
             print("API error:", method, e)
@@ -2310,6 +2342,7 @@ def handle_message(msg):
     chat_id = msg["chat"]["id"]
     user = msg["from"]
     uid = user["id"]
+    track_msg(chat_id, msg.get("message_id"))
     text = (msg.get("text") or "").strip()
     rec, new = touch_user(user)
     admin = is_admin(uid)
@@ -2324,6 +2357,9 @@ def handle_message(msg):
         LAST_MSG[uid] = now
         return
     LAST_MSG[uid] = now
+
+    if cmd == "/clear":
+        clear_chat(chat_id, user); return
 
     # ---- admin: files / commands / wizards
     if admin:
