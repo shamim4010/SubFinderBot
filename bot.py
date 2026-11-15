@@ -1590,10 +1590,14 @@ def view_top(chat_id, mid=None):
 
 
 def send_welcome(chat_id, user):
-    send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))), reply_kb(chat_id))
+    old = PANEL.get(chat_id)
+    send_message(chat_id, t(chat_id, "welcome", name=esc(user.get("first_name", ""))), {"remove_keyboard": True})
     send_message(chat_id, t(chat_id, "menu_title"), main_menu_kb(chat_id))
-    if chat_id not in PANEL and BOT_LAST.get(chat_id):
-        PANEL[chat_id] = BOT_LAST[chat_id]
+    new = BOT_LAST.get(chat_id)
+    if new:
+        PANEL[chat_id] = new
+        if old and old != new:
+            delete_msg(chat_id, old)
 
 
 def process_referral(user, new_rec, payload):
@@ -2531,7 +2535,7 @@ def handle_message(msg):
         delete_msg(chat_id, msg.get("message_id"))
         return
 
-    send_message(chat_id, t(uid, "search_hint"), reply_kb(uid))
+    send_message(chat_id, t(uid, "search_hint"))
 
 
 def handle_callback(cb):
@@ -2571,7 +2575,7 @@ def handle_callback(cb):
             else:
                 send_welcome(chat_id, user)
         else:
-            send_message(chat_id, t(uid, "lang_set"), reply_kb(uid)); view_settings(chat_id)
+            send_message(chat_id, t(uid, "lang_set")); view_settings(chat_id)
         return
 
     # ---- menu navigation
