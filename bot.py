@@ -1294,6 +1294,163 @@ FORM_HTML = """<!DOCTYPE html>
 </body>
 </html>"""
 
+APP_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SubFinder</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0a1120; color: #eef2f7; padding: 18px 14px 30px; }
+  .head { text-align: center; margin-bottom: 18px; }
+  .logo { width: 74px; height: 74px; margin: 0 auto 10px; border-radius: 22px; background: linear-gradient(145deg, #13233f, #0d1830); border: 2px solid #f4c542; display: flex; align-items: center; justify-content: center; font-size: 36px; box-shadow: 0 8px 24px rgba(244,197,66,.25); }
+  h1 { font-size: 24px; letter-spacing: .3px; }
+  h1 span { color: #f4c542; }
+  .tag { color: #9fb3c8; font-size: 13.5px; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+  .act { background: #111c30; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; padding: 16px 10px; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .15s ease; }
+  .act:active { transform: scale(.94); }
+  .act .ic { font-size: 26px; display: block; margin-bottom: 6px; }
+  .act .tx { font-size: 14.5px; font-weight: 600; }
+  .card { background: #111c30; border: 1px solid rgba(255,255,255,.09); border-radius: 16px; padding: 16px 14px; margin-bottom: 16px; }
+  .card h2 { font-size: 17px; margin-bottom: 10px; }
+  .hint { color: #9fb3c8; font-size: 13.5px; line-height: 1.5; }
+  .bigbtn { display: block; width: 100%; margin-top: 12px; padding: 13px; border: none; border-radius: 12px; background: linear-gradient(90deg, #f4c542, #e0a81c); color: #231a02; font-size: 15.5px; font-weight: 800; cursor: pointer; }
+  .bigbtn:active { transform: scale(.97); }
+  input[type=text] { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.35); color: #fff; font-size: 15px; outline: none; margin-bottom: 10px; }
+  input[type=text]:focus { border-color: #f4c542; }
+  .libitem { display: flex; align-items: center; gap: 10px; padding: 11px 4px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .libitem:last-child { border-bottom: none; }
+  .libitem .ic { font-size: 22px; }
+  .libitem .tt { font-size: 14.5px; font-weight: 600; line-height: 1.35; }
+  .libitem .mt { color: #9fb3c8; font-size: 12.5px; }
+  label { display: block; font-size: 13px; color: #9fb3c8; margin: 10px 0 6px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { flex: 1; min-width: 30%; text-align: center; padding: 10px 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.3); font-size: 14px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .chip.on { border-color: #f4c542; background: rgba(244,197,66,.16); color: #ffd970; font-weight: 700; }
+  .err { color: #ff8a80; font-size: 13px; min-height: 16px; margin-top: 8px; }
+  .foot { text-align: center; color: #5f748c; font-size: 12px; margin-top: 6px; }
+  .okwrap { text-align: center; padding: 16px 0 6px; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="logo">🎬</div>
+    <h1>Sub<span>Finder</span></h1>
+    <div class="tag">Bangla &amp; English subtitles — Movie • Anime • Drama</div>
+  </div>
+
+  <div class="grid">
+    <div class="act" onclick="go('library')"><span class="ic">📚</span><span class="tx">Library</span></div>
+    <div class="act" onclick="go('request')"><span class="ic">📩</span><span class="tx">Request</span></div>
+    <div class="act" onclick="openBot('premium')"><span class="ic">⭐</span><span class="tx">Premium</span></div>
+    <div class="act" onclick="openBot('trending')"><span class="ic">🔥</span><span class="tx">Trending</span></div>
+    <div class="act" onclick="openLink('https://t.me/animesub_bd')"><span class="ic">📢</span><span class="tx">Channel</span></div>
+    <div class="act" onclick="openBot('library')"><span class="ic">🎭</span><span class="tx">Categories</span></div>
+  </div>
+
+  <div class="card">
+    <h2>🔍 Search subtitles</h2>
+    <div class="hint">Online search er jonno bot er chat a giye movie / anime er nam likhlei hobe — library + online, dui jayga thekei khuje dibe.</div>
+    <button class="bigbtn" onclick="tg.close()">Open Bot Chat</button>
+  </div>
+
+  <div class="card" id="libCard">
+    <h2>📚 Library</h2>
+    <input type="text" id="libq" placeholder="Filter titles...">
+    <div id="liblist"></div>
+  </div>
+
+  <div class="card" id="reqCard">
+    <h2>📩 Request a subtitle</h2>
+    <label>🎬 Title</label>
+    <input type="text" id="title" placeholder="e.g. Interstellar">
+    <label>📂 Type</label>
+    <div class="chips" id="typeChips">
+      <div class="chip" data-v="movie">🎬 Movie</div>
+      <div class="chip on" data-v="anime">📺 Anime</div>
+      <div class="chip" data-v="drama">🎭 Drama</div>
+    </div>
+    <label>🔗 IMDb / MAL link (optional)</label>
+    <input type="text" id="link" placeholder="https://...">
+    <label>🌐 Subtitle language</label>
+    <div class="chips" id="langChips">
+      <div class="chip on" data-v="bn">🇧🇩 Bangla</div>
+      <div class="chip" data-v="en">🇬🇧 English</div>
+      <div class="chip" data-v="both">🌐 Both</div>
+    </div>
+    <button class="bigbtn" id="send">✅ Send Request</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="foot">SubFinder — your personal subtitle companion</div>
+
+<script>
+  var tg = window.Telegram.WebApp;
+  tg.ready(); tg.expand();
+  var LIB = __LIB__;
+  var ICONS = { movie: "🎬", anime: "📺", drama: "🎭" };
+  function renderLib(q) {
+    var el = document.getElementById("liblist");
+    var rows = LIB.filter(function(a){ return !q || a.title.toLowerCase().indexOf(q) >= 0; });
+    if (!rows.length) { el.innerHTML = "<div class='hint'>No titles found.</div>"; return; }
+    el.innerHTML = rows.map(function(a){
+      return "<div class='libitem'><span class='ic'>" + (ICONS[a.kind] || "🎬") + "</span><span><span class='tt'>" + a.title + "</span><br><span class='mt'>" + (a.year || "") + " • " + a.eps + " episodes</span></span></div>";
+    }).join("");
+  }
+  renderLib("");
+  document.getElementById("libq").addEventListener("input", function(e){ renderLib(e.target.value.trim().toLowerCase()); });
+  function go(id) {
+    var el = document.getElementById(id === "library" ? "libCard" : "reqCard");
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function openBot(p) { tg.openTelegramLink("https://t.me/__BOT__?start=" + p); }
+  function openLink(u) { tg.openTelegramLink(u); }
+  function chips(id) {
+    var box = document.getElementById(id), val = box.querySelector(".chip.on").dataset.v;
+    box.addEventListener("click", function(e){
+      var c = e.target.closest(".chip"); if (!c) return;
+      box.querySelectorAll(".chip").forEach(function(x){ x.classList.remove("on"); });
+      c.classList.add("on"); val = c.dataset.v;
+    });
+    return function(){ return val; };
+  }
+  var getType = chips("typeChips"), getLang = chips("langChips");
+  document.getElementById("send").addEventListener("click", function(){
+    var title = document.getElementById("title").value.trim();
+    if (!title) { document.getElementById("err").textContent = "Please type the full title first."; return; }
+    var type = getType();
+    var form = { title: title, type: type, link: document.getElementById("link").value.trim(),
+                 lang: getLang(), scope: type === "movie" ? "Full movie" : "Full Season" };
+    var btn = document.getElementById("send");
+    btn.disabled = true; btn.textContent = "Sending...";
+    fetch("/form-submit", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: tg.initData || "", form: form }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (j && j.ok) {
+          document.getElementById("reqCard").innerHTML = "<div class='okwrap'><div style='font-size:44px'>✅</div><h2>Request sent!</h2><div class='hint'>We will notify you when the subtitle is added</div></div>";
+          setTimeout(function(){ tg.close(); }, 2100);
+        } else {
+          btn.disabled = false; btn.textContent = "✅ Send Request";
+          document.getElementById("err").textContent = "Could not send. Please try again from the bot chat.";
+        }
+      })
+      .catch(function(){ btn.disabled = false; btn.textContent = "✅ Send Request"; document.getElementById("err").textContent = "Network error. Please try again."; });
+  });
+</script>
+</body>
+</html>"""
+
+
+def app_html():
+    lib = [{"title": a["title"], "year": a.get("year", ""), "eps": len(a["episodes"]), "kind": cat_kind(a)}
+           for a in CATALOG.values()]
+    return APP_HTML.replace("__LIB__", json.dumps(lib)).replace("__BOT__", BOT_USERNAME or "AnySubFinderBot")
+
+
 
 REQFLOW = {}
 def wstep(chat_id, uid, text, markup=None, mid=None):
@@ -2443,6 +2600,14 @@ def handle_message(msg):
             show_gate(chat_id, uid)
         else:
             send_welcome(chat_id, user)
+            if payload == "library":
+                view_library(chat_id)
+            elif payload == "premium":
+                view_premium(chat_id)
+            elif payload == "trending":
+                view_trending(chat_id)
+            elif payload == "request":
+                make_request(chat_id, user)
         return
     if gate_blocked(uid) and cmd not in ("/lang", "/id", "/cancel", "/menu"):
         if rec["lang"] is None:
@@ -2929,6 +3094,12 @@ def run_webhook(pool, base):
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
+            if self.path.startswith("/app"):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(app_html().encode())
+                return
             if self.path.startswith("/form"):
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
